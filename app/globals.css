@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/*
+ * Design System — Soccer Nutrition (Independiente Medellín)
+ * - Tema exclusivamente claro. No hay variante oscura a propósito.
+ * - Paleta ~85% neutros, con rojo y azul institucionales usados con moderación
+ *   (acentos, estados activos, enlaces). El verde está prohibido en toda la app,
+ *   incluyendo estados de éxito: esos se comunican con texto/ícono, nunca con color lleno.
+ * - Tipografía monoespaciada (Geist Mono) para datos y métricas numéricas.
+ */
+:root {
+  --background: #fafafa;
+  --foreground: #18181b;
+
+  --surface: #ffffff;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --muted: #71717a;
+
+  /* Rojo institucional (acento primario) */
+  --brand-red: #c8102e;
+  --brand-red-hover: #a80d26;
+  --brand-red-soft: #fdeeef;
+
+  /* Azul institucional (acento secundario) */
+  --brand-blue: #1d3557;
+  --brand-blue-hover: #15263e;
+  --brand-blue-soft: #eaeef3;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-muted: var(--muted);
+
+  --color-brand-red: var(--brand-red);
+  --color-brand-red-hover: var(--brand-red-hover);
+  --color-brand-red-soft: var(--brand-red-soft);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-hover: var(--brand-blue-hover);
+  --color-brand-blue-soft: var(--brand-blue-soft);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Tema exclusivamente claro: se ignora la preferencia de color del sistema. */
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Datos y métricas numéricas siempre en monoespaciada. */
+.data,
+.tabular {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
