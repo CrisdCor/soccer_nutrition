@@ -1,17 +1,20 @@
-import { createClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "./database.types";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+/**
+ * Cliente de Supabase para Client Components (navegador).
+ * Usa @supabase/ssr para que la sesión quede sincronizada vía cookies con el
+ * servidor (middleware y Server Components) en vez de solo localStorage.
+ */
+export function createClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    "Faltan NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY. Revisa tu .env.local (ver .env.example)."
-  );
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      "Faltan NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY. Revisa tu .env.local (ver .env.example)."
+    );
+  }
+
+  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
 }
-
-// Cliente único de Supabase para todo el frontend. La anon key es pública y
-// toda tabla tiene RLS activo, por lo que es seguro usar este mismo cliente
-// tanto en componentes de cliente como en Server Components/Route Handlers
-// (la sesión del usuario autenticado se aplica vía Supabase Auth).
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);

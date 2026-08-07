@@ -10,7 +10,7 @@ Excel actual.
 - **Backend/DB:** Supabase (Postgres + Auth + Storage) — esquema con RLS ya aplicado
 - **Formularios:** react-hook-form + zod
 - **Gráficos:** recharts
-- **Cliente Supabase:** @supabase/supabase-js
+- **Cliente Supabase:** @supabase/ssr (browser + server, con cookies de sesión)
 
 ## Desarrollo local
 
@@ -36,10 +36,33 @@ Al importar este repositorio en Vercel, configura estas variables de entorno
 ## Estructura
 
 ```
-app/                  Rutas (App Router)
-components/layout/    Shell de la app (sidebar + header)
-lib/supabase/         Cliente de Supabase y tipos generados del esquema
+app/login/            Ruta pública (única) — formulario de acceso
+app/(app)/            Rutas autenticadas (dashboard, jugadores, valoraciones,
+                      catálogos, configuración, usuarios) — comparten sidebar+header
+components/layout/    Shell de la app (sidebar + header), sensible al rol
+components/auth/      Formulario de login
+lib/supabase/         Clientes de Supabase (browser/server) y tipos generados
+lib/auth/             Contexto de perfil de usuario + server action de logout
+proxy.ts              Protección de rutas y refresco de sesión en cada request
 ```
+
+## Autenticación y roles
+
+No hay registro público: solo `admin` crea usuarios (módulo de Usuarios,
+pendiente). Para crear el primer `admin` de prueba:
+
+1. Supabase Dashboard → **Authentication → Add user**, con **User Metadata**:
+   ```json
+   { "role": "admin", "full_name": "Nombre Apellido" }
+   ```
+   Un trigger (`on_auth_user_created`) crea automáticamente la fila en
+   `user_profiles` con ese rol y organización (por defecto, Independiente
+   Medellín). Sin metadata, el rol por defecto es `nutricionista`.
+2. Inicia sesión en `/login` con ese correo/contraseña.
+
+`proxy.ts` (el middleware, renombrado según la convención de Next.js 16)
+exige sesión en toda ruta salvo `/login`, y exige además `role = 'admin'`
+(verificado contra `user_profiles`, no contra el JWT) para `/usuarios`.
 
 ## Esquema de base de datos
 

@@ -2,25 +2,31 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUserProfile } from "@/lib/auth/user-profile-context";
 
 type NavItem = {
   label: string;
   href: string;
+  adminOnly?: boolean;
 };
 
 // Estructura de navegación del MVP (ver orden de prioridad de módulos).
-// Los enlaces existen ya como shell; las páginas se implementan en los
-// siguientes pasos de desarrollo.
+// "Usuarios" solo se muestra a role = 'admin' (el acceso real ya está
+// forzado por middleware.ts; esto es solo para no mostrar un enlace muerto).
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/" },
+  { label: "Dashboard", href: "/dashboard" },
   { label: "Jugadores", href: "/jugadores" },
   { label: "Valoraciones", href: "/valoraciones" },
   { label: "Catálogos", href: "/catalogos" },
   { label: "Configuración", href: "/configuracion" },
+  { label: "Usuarios", href: "/usuarios", adminOnly: true },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { role } = useUserProfile();
+
+  const items = NAV_ITEMS.filter((item) => !item.adminOnly || role === "admin");
 
   return (
     <aside className="hidden md:flex md:w-60 md:flex-col md:border-r md:border-border md:bg-surface">
@@ -32,9 +38,8 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {NAV_ITEMS.map((item) => {
-          const isActive =
-            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+        {items.map((item) => {
+          const isActive = pathname.startsWith(item.href);
 
           return (
             <Link
