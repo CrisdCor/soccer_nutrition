@@ -1,12 +1,26 @@
-import { PlaceholderPage } from "@/components/ui/placeholder-page";
+import Link from "next/link";
+import { UsersTable } from "@/components/usuarios/users-table";
+import { requireProfile } from "@/lib/auth/session";
+import { listUsers } from "@/lib/usuarios/queries";
 
-// Acceso restringido a role = 'admin' (ver middleware.ts). El siguiente
-// módulo del MVP construye el CRUD real usando la Admin API de Supabase.
-export default function UsuariosPage() {
+export default async function UsuariosPage() {
+  const [users, { profile }] = await Promise.all([listUsers(), requireProfile()]);
+
   return (
-    <PlaceholderPage
-      title="Usuarios"
-      description="Creación y gestión de usuarios (admin) vía Supabase Admin API."
-    />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Usuarios</h2>
+          <p className="text-sm text-muted">
+            Solo admin. Nunca se borran: se inactivan (bloquea el login vía Supabase Auth).
+          </p>
+        </div>
+        <Link href="/usuarios/nuevo" className="btn-primary">
+          Nuevo usuario
+        </Link>
+      </div>
+
+      <UsersTable users={users} currentUserId={profile.id} />
+    </div>
   );
 }
