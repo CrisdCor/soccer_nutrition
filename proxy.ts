@@ -7,10 +7,14 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // Única ruta pública de la app. Todo lo demás requiere sesión por defecto
 // (deny-by-default). Estos prefijos además requieren role = 'admin', igual
-// que las políticas RLS de positions/categories/reference_thresholds
-// ("ALL ... current_user_role() = 'admin'") y de /usuarios (gestión futura).
+// que las políticas RLS de positions/categories ("ALL ... current_user_role()
+// = 'admin'") y de /usuarios. /configuracion YA NO es admin-only a nivel de
+// ruta: umbrales de referencia sigue siendo admin-only (gating dentro de la
+// página), pero diet_types/food_groups son editables por cualquier rol —
+// igual que sus políticas RLS ("ALL (organization_id = current_user_org())",
+// sin chequeo de rol).
 const PUBLIC_ROUTES = ["/login"];
-const ADMIN_ROUTE_PREFIXES = ["/usuarios", "/catalogos", "/configuracion"];
+const ADMIN_ROUTE_PREFIXES = ["/usuarios", "/catalogos"];
 
 export async function proxy(request: NextRequest) {
   // response empieza como passthrough; createServerClient la reasigna cada

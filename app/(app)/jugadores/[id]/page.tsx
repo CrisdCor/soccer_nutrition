@@ -3,8 +3,9 @@ import { PlayerActionsMenu } from "@/components/jugadores/player-actions-menu";
 import { PlayerAssessmentsTabs } from "@/components/jugadores/player-assessments-tabs";
 import { PlayerPhotoUploader } from "@/components/jugadores/player-photo-uploader";
 import { computeDisplayAge } from "@/lib/calculations";
-import { getCurrentThresholds } from "@/lib/configuracion/queries";
+import { getCurrentThresholds, listDietTypes, listFoodGroups } from "@/lib/configuracion/queries";
 import { getPlayerById, getPlayerPhotoUrl } from "@/lib/jugadores/queries";
+import { getNutritionPlansByPlayer, listMealTypes } from "@/lib/nutricion/queries";
 import { listAssessmentsByPlayer } from "@/lib/valoraciones/queries";
 
 export default async function PlayerDetailPage({
@@ -13,11 +14,16 @@ export default async function PlayerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [player, assessments, thresholds] = await Promise.all([
-    getPlayerById(id),
-    listAssessmentsByPlayer(id),
-    getCurrentThresholds(),
-  ]);
+  const [player, assessments, thresholds, dietTypes, foodGroups, mealTypes, nutritionPlansByAssessment] =
+    await Promise.all([
+      getPlayerById(id),
+      listAssessmentsByPlayer(id),
+      getCurrentThresholds(),
+      listDietTypes({ activeOnly: true }),
+      listFoodGroups({ activeOnly: true }),
+      listMealTypes(),
+      getNutritionPlansByPlayer(id),
+    ]);
 
   if (!player) {
     notFound();
@@ -53,9 +59,15 @@ export default async function PlayerDetailPage({
         playerId={player.id}
         playerName={player.full_name}
         playerDocument={player.document}
+        playerSex={player.sex}
+        playerBirthDate={player.birth_date}
         photoUrl={photoUrl}
         assessments={assessments}
         thresholds={thresholds}
+        nutritionPlansByAssessment={nutritionPlansByAssessment}
+        dietTypes={dietTypes}
+        foodGroups={foodGroups}
+        mealTypes={mealTypes}
       />
     </div>
   );

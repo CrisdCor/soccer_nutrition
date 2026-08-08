@@ -80,8 +80,12 @@ Para crear el primer `admin` de prueba (antes de que exista ningún admin):
 
 `proxy.ts` (el middleware, renombrado según la convención de Next.js 16)
 exige sesión en toda ruta salvo `/login`, y exige además `role = 'admin'`
-(verificado contra `user_profiles`, no contra el JWT) para `/usuarios`,
-`/catalogos` y `/configuracion` — igual que sus políticas RLS.
+(verificado contra `user_profiles`, no contra el JWT) para `/usuarios` y
+`/catalogos` — igual que sus políticas RLS. `/configuracion` ya **no** es
+admin-only a nivel de ruta: los umbrales de referencia siguen siendo solo
+admin (gating dentro de la página), pero los catálogos del Plan de
+Alimentación (`diet_types`, `food_groups`) son editables por cualquier rol,
+igual que su política RLS.
 
 Como jugadores y valoraciones, los usuarios nunca se borran: "Inactivar"
 bloquea el login (Supabase Auth `ban_duration`) y marca `user_profiles.status
@@ -125,14 +129,51 @@ La sección de valoraciones tiene dos tabs:
   (foto, IMC, %Grasa Yuhasz y AKS con su clasificación contra los umbrales
   configurables de `reference_thresholds`) + el detalle completo de mediciones
   (`components/valoraciones/assessment-detail-groups.tsx`, compartido con
-  `/valoraciones/[id]` para no duplicar el desglose). Diagnóstico nutricional
-  y Plan de alimentación quedan como placeholder "próximamente": se
-  construyen en el módulo de Plan de Alimentación (handoff aparte).
+  `/valoraciones/[id]` para no duplicar el desglose) + el Plan de Alimentación
+  completo de esa valoración (ver sección siguiente).
 
 La clasificación de %Grasa reutiliza el umbral de `skinfold_sum` (no hay un
 umbral separado para el porcentaje: al derivarse monótonamente de la Suma 6
 Pliegues, clasificar por ese umbral equivale a clasificar el %Grasa). Ver
 `classifyByThreshold` en `lib/format.ts`.
+
+## Plan de alimentación
+
+Un plan por valoración (`nutrition_plans.assessment_id` es único). A
+diferencia de `assessments` (insert-only, solo admin edita), es un documento
+clínico vivo: **cualquier rol** lo crea y edita libremente (política RLS sin
+restricción), directo desde el tab "Reporte" del perfil — "Crear plan" si no
+existe, "Editar plan" si ya existe.
+
+- `components/nutricion/nutrition-plan-form.tsx`: las 7 secciones (diagnóstico,
+  tipo de dieta, requerimiento energético, distribución de macros, porciones
+  por grupo de alimento × comida, ejemplo de menú, recomendaciones). No usa
+  react-hook-form como el resto del proyecto — la tabla de porciones depende
+  de catálogos dinámicos (`food_groups` × `meal_types`), así que se maneja
+  como estado de componente, con el mismo schema de zod revalidando en
+  servidor (`lib/validation/nutrition-plan.ts`).
+- El ajuste calórico se captura como dirección (Déficit/Superávit) + magnitud
+  positiva en la UI, y se guarda como un solo valor con signo
+  (`caloric_adjustment_kcal`) — más claro de escribir, mismo dato en BD.
+- La columna "Porciones" de la tabla nunca se guarda: se suma al vuelo (en el
+  formulario y en el reporte) a partir de las porciones por comida, igual que
+  los demás indicadores derivados del proyecto.
+- `lib/nutricion/diagnosis.ts`: `buildSuggestedDiagnosis()` genera el párrafo
+  inicial del diagnóstico a partir de la valoración (sexo, edad a la fecha de
+  la valoración, peso, talla, IMC, AKS y %Grasa con su clasificación) — es
+  función pura, y es solo un punto de partida: la nutricionista lo edita o
+  borra libremente, sin bloquear el guardado.
+- `components/nutricion/nutrition-plan-report.tsx`: vista de solo lectura con
+  el layout del PDF de referencia — pensada para pantalla completa, no como
+  un formulario crudo (eventualmente proyectable a directivas).
+- `diet_types`/`food_groups` son catálogos editables por cualquier rol (a
+  diferencia de `positions`/`categories`) desde `/configuracion`, mismo patrón
+  visual (`CatalogSection`) que Posiciones/Categorías.
+- `meal_types` es catálogo cerrado (Desayuno, Post entreno, Almuerzo, Algo,
+  Cena — orden fijo por `sort_order`), sin CRUD.
+- Fuera de alcance a propósito: exportar a PDF, fórmulas automáticas de
+  distribución de macros, carga de fotos en el ejemplo de menú, clasificación
+  de IMC (pendiente definir tabla de referencia OMS).
 
 ## Cálculos antropométricos
 
@@ -145,8 +186,11 @@ muestra esos `null` como "Dato insuficiente" en toda la UI.
 
 ## Esquema de base de datos
 
-8 tablas con RLS activo: `organizations`, `user_profiles`, `races`, `positions`,
-`categories`, `reference_thresholds`, `players`, `assessments`. Multi-tenant vía
+15 tablas con RLS activo: `organizations`, `user_profiles`, `races`, `positions`,
+`categories`, `reference_thresholds`, `players`, `assessments`, `diet_types`,
+`food_groups`, `meal_types`, `nutrition_plans`, `nutrition_plan_diet_types`,
+`nutrition_plan_food_portions`, `nutrition_plan_menu_examples`. Multi-tenant vía
 `organization_id`. `players` no borra físicamente (solo se inactiva);
-`assessments` es insert-only para `nutricionista` (solo `admin` puede editar).
-Ver `lib/supabase/database.types.ts` para los tipos completos.
+`assessments` es insert-only para `nutricionista` (solo `admin` puede editar);
+`nutrition_plans` sí es editable libremente por cualquier rol. Ver
+`lib/supabase/database.types.ts` para los tipos completos.

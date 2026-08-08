@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/auth/session";
+import { requireAdmin, requireProfile } from "@/lib/auth/session";
+import { catalogItemSchema, type CatalogItemValues } from "@/lib/validation/catalog";
 import { thresholdFormSchema, type ThresholdFormValues } from "@/lib/validation/threshold";
 
 // Umbrales de referencia (Suma 6 Pliegues, AKS): configurables por
@@ -33,6 +34,65 @@ export async function createThreshold(values: ThresholdFormValues) {
 
   if (error) {
     return { error: error.message };
+  }
+
+  revalidatePath("/configuracion");
+}
+
+// diet_types / food_groups: cualquier rol de la organización (nutricionista o
+// admin) los administra -- sin requireAdmin, a diferencia de los umbrales.
+// Nunca se borran físicamente, solo se desactivan (mismo patrón que
+// positions/categories).
+
+export async function createDietType(values: CatalogItemValues) {
+  const parsed = catalogItemSchema.parse(values);
+  const { supabase, profile } = await requireProfile();
+
+  const { error } = await supabase.from("diet_types").insert({
+    organization_id: profile.organization_id,
+    name: parsed.name,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/configuracion");
+}
+
+export async function toggleDietTypeActive(id: string, active: boolean): Promise<void> {
+  const { supabase } = await requireProfile();
+
+  const { error } = await supabase.from("diet_types").update({ active }).eq("id", id);
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/configuracion");
+}
+
+export async function createFoodGroup(values: CatalogItemValues) {
+  const parsed = catalogItemSchema.parse(values);
+  const { supabase, profile } = await requireProfile();
+
+  const { error } = await supabase.from("food_groups").insert({
+    organization_id: profile.organization_id,
+    name: parsed.name,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/configuracion");
+}
+
+export async function toggleFoodGroupActive(id: string, active: boolean): Promise<void> {
+  const { supabase } = await requireProfile();
+
+  const { error } = await supabase.from("food_groups").update({ active }).eq("id", id);
+  if (error) {
+    throw new Error(error.message);
   }
 
   revalidatePath("/configuracion");

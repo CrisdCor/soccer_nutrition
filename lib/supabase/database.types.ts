@@ -226,6 +226,289 @@ export type Database = {
           },
         ]
       }
+      diet_types: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diet_types_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      food_groups: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_groups_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meal_types: {
+        Row: {
+          id: number
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          id: number
+          name: string
+          sort_order: number
+        }
+        Update: {
+          id?: number
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      nutrition_plan_diet_types: {
+        Row: {
+          diet_type_id: string
+          plan_id: string
+        }
+        Insert: {
+          diet_type_id: string
+          plan_id: string
+        }
+        Update: {
+          diet_type_id?: string
+          plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutrition_plan_diet_types_diet_type_id_fkey"
+            columns: ["diet_type_id"]
+            isOneToOne: false
+            referencedRelation: "diet_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nutrition_plan_diet_types_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "nutrition_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nutrition_plan_food_portions: {
+        Row: {
+          food_group_id: string
+          meal_type_id: number
+          plan_id: string
+          portions: number
+        }
+        Insert: {
+          food_group_id: string
+          meal_type_id: number
+          plan_id: string
+          portions?: number
+        }
+        Update: {
+          food_group_id?: string
+          meal_type_id?: number
+          plan_id?: string
+          portions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutrition_plan_food_portions_food_group_id_fkey"
+            columns: ["food_group_id"]
+            isOneToOne: false
+            referencedRelation: "food_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nutrition_plan_food_portions_meal_type_id_fkey"
+            columns: ["meal_type_id"]
+            isOneToOne: false
+            referencedRelation: "meal_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nutrition_plan_food_portions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "nutrition_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nutrition_plan_menu_examples: {
+        Row: {
+          description: string | null
+          meal_type_id: number
+          plan_id: string
+        }
+        Insert: {
+          description?: string | null
+          meal_type_id: number
+          plan_id: string
+        }
+        Update: {
+          description?: string | null
+          meal_type_id?: number
+          plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutrition_plan_menu_examples_meal_type_id_fkey"
+            columns: ["meal_type_id"]
+            isOneToOne: false
+            referencedRelation: "meal_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nutrition_plan_menu_examples_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "nutrition_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nutrition_plans: {
+        Row: {
+          assessment_id: string
+          caloric_adjustment_kcal: number | null
+          carbs_g: number | null
+          carbs_g_per_kg: number | null
+          created_at: string
+          created_by: string
+          diet_type_observation: string | null
+          energy_distribution_kcal: number | null
+          energy_requirement_kcal: number | null
+          fat_g: number | null
+          fat_g_per_kg: number | null
+          general_recommendations: string | null
+          id: string
+          nutritional_diagnosis: string | null
+          organization_id: string
+          protein_g: number | null
+          protein_g_per_kg: number | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          assessment_id: string
+          caloric_adjustment_kcal?: number | null
+          carbs_g?: number | null
+          carbs_g_per_kg?: number | null
+          created_at?: string
+          created_by: string
+          diet_type_observation?: string | null
+          energy_distribution_kcal?: number | null
+          energy_requirement_kcal?: number | null
+          fat_g?: number | null
+          fat_g_per_kg?: number | null
+          general_recommendations?: string | null
+          id?: string
+          nutritional_diagnosis?: string | null
+          organization_id: string
+          protein_g?: number | null
+          protein_g_per_kg?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          assessment_id?: string
+          caloric_adjustment_kcal?: number | null
+          carbs_g?: number | null
+          carbs_g_per_kg?: number | null
+          created_at?: string
+          created_by?: string
+          diet_type_observation?: string | null
+          energy_distribution_kcal?: number | null
+          energy_requirement_kcal?: number | null
+          fat_g?: number | null
+          fat_g_per_kg?: number | null
+          general_recommendations?: string | null
+          id?: string
+          nutritional_diagnosis?: string | null
+          organization_id?: string
+          protein_g?: number | null
+          protein_g_per_kg?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutrition_plans_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: true
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nutrition_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nutrition_plans_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nutrition_plans_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string

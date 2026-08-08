@@ -36,3 +36,33 @@ export async function getCurrentThresholds(): Promise<CurrentThresholds> {
   }
   return result;
 }
+
+// diet_types / food_groups: a diferencia de positions/categories, su policy
+// RLS ("ALL (organization_id = current_user_org())") NO exige role = 'admin'
+// -- cualquier nutricionista/admin de la organización los administra.
+
+export async function listDietTypes(options?: { activeOnly?: boolean }) {
+  const supabase = await createClient();
+  let query = supabase.from("diet_types").select("id, name, active").order("name");
+
+  if (options?.activeOnly) {
+    query = query.eq("active", true);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function listFoodGroups(options?: { activeOnly?: boolean }) {
+  const supabase = await createClient();
+  let query = supabase.from("food_groups").select("id, name, active").order("name");
+
+  if (options?.activeOnly) {
+    query = query.eq("active", true);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}

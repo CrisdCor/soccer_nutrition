@@ -1,27 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AssessmentDetailGroups, type AssessmentDetailFields } from "@/components/valoraciones/assessment-detail-groups";
+import { NutritionPlanSection } from "@/components/nutricion/nutrition-plan-section";
 import { classifyByThreshold, formatClassification, formatIndicator, formatPercentage, type ThresholdRange } from "@/lib/format";
+import { buildSuggestedDiagnosis } from "@/lib/nutricion/diagnosis";
+import type { NutritionPlanFull } from "@/lib/nutricion/queries";
 
 type ReportAssessment = AssessmentDetailFields & { id: string; assessment_date: string; label: string };
+type CatalogOption = { id: string; name: string };
+type MealType = { id: number; name: string; sort_order: number };
 
 export function PlayerReportTab({
+  playerId,
   playerName,
   playerDocument,
+  playerSex,
+  playerBirthDate,
   photoUrl,
   assessments,
   thresholds,
+  nutritionPlansByAssessment,
+  dietTypes,
+  foodGroups,
+  mealTypes,
 }: {
+  playerId: string;
   playerName: string;
   playerDocument: string;
+  playerSex: "Hombre" | "Mujer";
+  playerBirthDate: string;
   photoUrl: string | null;
   /** Más reciente primero. */
   assessments: ReportAssessment[];
   thresholds: { skinfold_sum: ThresholdRange | null; aks_index: ThresholdRange | null };
+  nutritionPlansByAssessment: Record<string, NutritionPlanFull>;
+  dietTypes: CatalogOption[];
+  foodGroups: CatalogOption[];
+  mealTypes: MealType[];
 }) {
   const [selectedId, setSelectedId] = useState(assessments[0]?.id ?? "");
   const assessment = assessments.find((a) => a.id === selectedId) ?? assessments[0];
+
+  const suggestedDiagnosis = useMemo(() => {
+    if (!assessment) return "";
+    return buildSuggestedDiagnosis({
+      sex: playerSex,
+      birthDate: new Date(playerBirthDate),
+      assessmentDate: new Date(assessment.assessment_date),
+      weightKg: assessment.weight_kg,
+      heightCm: assessment.height_cm,
+      bmi: assessment.bmi,
+      aksIndex: assessment.aks_index,
+      skinfoldSum6: assessment.skinfold_sum_6,
+      fatPercentage: assessment.fat_percentage,
+      thresholds,
+    });
+  }, [assessment, playerSex, playerBirthDate, thresholds]);
 
   if (!assessment) {
     return (
@@ -86,17 +121,16 @@ export function PlayerReportTab({
 
       <AssessmentDetailGroups assessment={assessment} />
 
-      <div className="rounded-lg border border-dashed border-border-strong bg-surface p-6">
-        <h3 className="text-sm font-semibold text-foreground">Diagnóstico nutricional</h3>
-        <p className="mt-2 text-sm text-muted">
-          Pendiente — se construye en el módulo de Plan de Alimentación (en paralelo).
-        </p>
-      </div>
-
-      <div className="rounded-lg border border-dashed border-border-strong bg-surface p-6">
-        <h3 className="text-sm font-semibold text-foreground">Plan de alimentación</h3>
-        <p className="mt-2 text-sm text-muted">Plan de alimentación — próximamente.</p>
-      </div>
+      <NutritionPlanSection
+        key={assessment.id}
+        assessmentId={assessment.id}
+        playerId={playerId}
+        dietTypes={dietTypes}
+        foodGroups={foodGroups}
+        mealTypes={mealTypes}
+        existingPlan={nutritionPlansByAssessment[assessment.id] ?? null}
+        suggestedDiagnosis={suggestedDiagnosis}
+      />
     </div>
   );
 }
