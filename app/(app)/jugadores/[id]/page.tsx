@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AssessmentEvolutionChart } from "@/components/jugadores/assessment-evolution-chart";
 import { PlayerAssessmentsTable } from "@/components/jugadores/player-assessments-table";
+import { PlayerPhotoUploader } from "@/components/jugadores/player-photo-uploader";
+import { PlayerStatusToggle } from "@/components/jugadores/player-status-toggle";
 import { computeDisplayAge } from "@/lib/calculations";
-import { getPlayerById } from "@/lib/jugadores/queries";
-import { setPlayerStatus } from "@/lib/jugadores/actions";
+import { getPlayerById, getPlayerPhotoUrl } from "@/lib/jugadores/queries";
 import { listAssessmentsByPlayer } from "@/lib/valoraciones/queries";
 
 export default async function PlayerDetailPage({
@@ -22,6 +23,7 @@ export default async function PlayerDetailPage({
     notFound();
   }
 
+  const photoUrl = await getPlayerPhotoUrl(player.photo_path);
   const age = computeDisplayAge(new Date(player.birth_date));
   const chartPoints = assessments.map((a) => ({
     date: a.assessment_date,
@@ -32,25 +34,18 @@ export default async function PlayerDetailPage({
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">{player.full_name}</h2>
-          <p className="data text-sm text-muted">{player.document}</p>
+        <div className="flex items-start gap-4">
+          <PlayerPhotoUploader playerId={player.id} photoUrl={photoUrl} />
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">{player.full_name}</h2>
+            <p className="data text-sm text-muted">{player.document}</p>
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex shrink-0 gap-2">
           <Link href={`/jugadores/${player.id}/editar`} className="btn-secondary">
             Editar
           </Link>
-          <form
-            action={setPlayerStatus.bind(
-              null,
-              player.id,
-              player.status === "active" ? "inactive" : "active"
-            )}
-          >
-            <button type="submit" className="btn-secondary">
-              {player.status === "active" ? "Inactivar" : "Activar"}
-            </button>
-          </form>
+          <PlayerStatusToggle playerId={player.id} playerName={player.full_name} status={player.status} />
         </div>
       </div>
 

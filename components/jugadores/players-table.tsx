@@ -1,6 +1,6 @@
 import Link from "next/link";
+import { PlayerStatusToggle } from "@/components/jugadores/player-status-toggle";
 import { computeDisplayAge } from "@/lib/calculations";
-import { setPlayerStatus } from "@/lib/jugadores/actions";
 
 type PlayerRow = {
   id: string;
@@ -58,11 +58,11 @@ export function PlayersTable({ players }: { players: PlayerRow[] }) {
               <td className="px-4 py-3 text-muted">{player.position?.name ?? "—"}</td>
               <td className="px-4 py-3 text-muted">{player.category?.name ?? "—"}</td>
               <td className="px-4 py-3 text-right">
-                <form action={setPlayerStatus.bind(null, player.id, player.status === "active" ? "inactive" : "active")}>
-                  <button type="submit" className="btn-secondary">
-                    {player.status === "active" ? "Inactivar" : "Activar"}
-                  </button>
-                </form>
+                <PlayerStatusToggle
+                  playerId={player.id}
+                  playerName={player.full_name}
+                  status={player.status}
+                />
               </td>
             </tr>
           ))}

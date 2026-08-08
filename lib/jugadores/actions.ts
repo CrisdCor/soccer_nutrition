@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth/session";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { playerFormSchema, type PlayerFormValues } from "@/lib/validation/player";
+
+const PLAYER_PHOTOS_BUCKET = "player-photos";
+const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export async function createPlayer(values: PlayerFormValues) {
   const parsed = playerFormSchema.parse(values);
@@ -87,4 +91,42 @@ export async function setPlayerStatus(
 
   revalidatePath("/jugadores");
   revalidatePath(`/jugadores/${playerId}`);
+}
+
+/**
+ * Sube la foto a un bucket privado de Storage (nunca público: hay menores
+ * de edad en varias categorías) y guarda solo el path en players.photo_path
+ * -- nunca una URL pública. La lectura se hace después vía URL firmada de
+ * corta duración (ver lib/jugadores/queries.ts).
+ */
+export async function uploadPlayerPhoto(playerId: string, formData: FormData): Promise<void> {
+  const { supabase, profile } = await requireProfile();
+
+  const file = formData.get("photo");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("Selecciona una imagen.");
+  }
+  if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+    throw new Error("La imagen debe ser JPEG, PNG o WEBP.");
+  }
+
+  const admin = createAdminClient();
+  const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const path = `${profile.organization_id}/${playerId}/${Date.now()}.${extension}`;
+
+  const { error: uploadError } = await admin.storage
+    .from(PLAYER_PHOTOS_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+
+  if (uploadError) {
+    throw new Error(uploadError.message);
+  }
+
+  const { error } = await supabase.from("players").update({ photo_path: path }).eq("id", playerId);
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath(`/jugadores/${playerId}`);
+  revalidatePath(`/jugadores/${playerId}/editar`);
 }

@@ -87,6 +87,28 @@ bloquea el login (Supabase Auth `ban_duration`) y marca `user_profiles.status
 = 'inactive'`. Un admin no puede inactivarse a sí mismo (el botón ni siquiera
 aparece en su propia fila).
 
+Toda acción de "inactivar/desactivar" (jugadores, usuarios, posiciones,
+categorías) pide confirmación explícita antes de ejecutar el `UPDATE`, vía
+`components/ui/confirm-action-button.tsx` — modal neutro (gris/blanco, nunca
+rojo: el riesgo ya está mitigado con la confirmación misma). Reactivar no la
+pide, al no tener una consecuencia real.
+
+## Fotografía de jugadores
+
+Bucket de Storage **privado** (`player-photos`, `public = false`, 5 MB, solo
+JPEG/PNG/WEBP) — varias categorías incluyen menores de edad, así que ninguna
+foto es accesible por URL directa. Tanto la subida como la lectura pasan
+exclusivamente por `lib/supabase/admin.ts` (service_role) en servidor:
+
+- Al guardar, solo se persiste el `path` en `players.photo_path`, nunca una URL.
+- Al mostrarla, se genera una **signed URL** de 5 minutos al vuelo
+  (`getPlayerPhotoUrl`) — no hay policies de `storage.objects` para este
+  bucket a propósito: con RLS habilitado por defecto y cero policies, el
+  cliente anon/autenticado no puede leerlo directo bajo ninguna circunstancia.
+- Se gestiona desde el perfil (`/jugadores/[id]`) y desde "Editar" — no desde
+  "Nuevo jugador", porque el path de Storage necesita un `id` de jugador que
+  todavía no existe en ese punto del flujo.
+
 ## Cálculos antropométricos
 
 `lib/calculations/` implementa cada fórmula (Suma 6 Pliegues, perímetros

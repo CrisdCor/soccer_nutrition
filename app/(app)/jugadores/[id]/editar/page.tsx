@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { PlayerForm } from "@/components/jugadores/player-form";
+import { PlayerPhotoUploader } from "@/components/jugadores/player-photo-uploader";
 import { listCategories, listPositions, listRaces } from "@/lib/catalogos/queries";
 import { updatePlayer } from "@/lib/jugadores/actions";
-import { getPlayerById } from "@/lib/jugadores/queries";
+import { getPlayerById, getPlayerPhotoUrl } from "@/lib/jugadores/queries";
 
 export default async function EditarJugadorPage({
   params,
@@ -22,12 +23,16 @@ export default async function EditarJugadorPage({
     notFound();
   }
 
+  const photoUrl = await getPlayerPhotoUrl(player.photo_path);
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-foreground">Editar jugador</h2>
         <p className="text-sm text-muted">{player.full_name}</p>
       </div>
+
+      <PlayerPhotoUploader playerId={player.id} photoUrl={photoUrl} />
 
       <PlayerForm
         races={races}

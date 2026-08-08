@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { ConfirmActionButton } from "@/components/ui/confirm-action-button";
 import { catalogItemSchema, type CatalogItemValues } from "@/lib/validation/catalog";
 
 type CatalogItem = { id: string; name: string; active: boolean };
@@ -51,11 +52,21 @@ export function CatalogSection({
             <span className={item.active ? "text-sm text-foreground" : "text-sm text-muted line-through"}>
               {item.name}
             </span>
-            <form action={toggleAction.bind(null, item.id, !item.active)}>
-              <button type="submit" className="btn-secondary">
-                {item.active ? "Desactivar" : "Activar"}
-              </button>
-            </form>
+            {item.active ? (
+              <ConfirmActionButton
+                label="Desactivar"
+                confirmTitle={`Desactivar ${title.toLowerCase()}`}
+                confirmDescription={`¿Desactivar "${item.name}"? Dejará de estar disponible para elegir en jugadores nuevos. No se borra: se puede reactivar después.`}
+                confirmLabel="Desactivar"
+                action={() => toggleAction(item.id, false)}
+              />
+            ) : (
+              <form action={toggleAction.bind(null, item.id, true)}>
+                <button type="submit" className="btn-secondary">
+                  Activar
+                </button>
+              </form>
+            )}
           </li>
         ))}
       </ul>

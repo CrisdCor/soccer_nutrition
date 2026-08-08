@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { setUserStatus } from "@/lib/usuarios/actions";
+import { UserStatusToggle } from "@/components/usuarios/user-status-toggle";
 import type { UserRow } from "@/lib/usuarios/queries";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -51,17 +51,7 @@ export function UsersTable({ users, currentUserId }: { users: UserRow[]; current
                 </td>
                 <td className="px-4 py-3 text-right">
                   {!isSelf && (
-                    <form
-                      action={setUserStatus.bind(
-                        null,
-                        user.id,
-                        user.status === "active" ? "inactive" : "active"
-                      )}
-                    >
-                      <button type="submit" className="btn-secondary">
-                        {user.status === "active" ? "Inactivar" : "Activar"}
-                      </button>
-                    </form>
+                    <UserStatusToggle userId={user.id} userName={user.full_name} status={user.status} />
                   )}
                 </td>
               </tr>

@@ -80,6 +80,22 @@ body {
   border-color: var(--color-brand-red);
 }
 
+/*
+ * El Design System exige fondo blanco en todo input (punto 12): algunos
+ * navegadores (gestor de contraseñas de Chrome, autocompletado) pintan un
+ * relleno propio (amarillo/azul) sobre los campos con credenciales
+ * guardadas, aunque nuestro CSS ya defina el fondo correcto. Se fuerza aquí
+ * a que ese relleno inyectado por el navegador siga siendo el nuestro.
+ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--color-background) inset;
+  -webkit-text-fill-color: var(--color-foreground);
+  caret-color: var(--color-foreground);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 .btn-primary {
   border-radius: 0.375rem;
   background: var(--color-brand-red);
