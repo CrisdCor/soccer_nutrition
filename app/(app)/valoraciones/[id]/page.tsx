@@ -65,6 +65,9 @@ export default async function ValoracionDetallePage({
 
       <InfoGroup title="Indicadores calculados">
         <InfoItem label="Suma 6 pliegues" value={formatIndicator(assessment.skinfold_sum_6, 1, " mm")} />
+        <InfoItem label="PR Brazo Corregido" value={formatIndicator(assessment.corrected_arm_girth, 2, " cm")} />
+        <InfoItem label="PR Muslo Corregido" value={formatIndicator(assessment.corrected_thigh_girth, 2, " cm")} />
+        <InfoItem label="PR Pierna Corregido" value={formatIndicator(assessment.corrected_calf_girth, 2, " cm")} />
         <InfoItem label="Masa ósea" value={formatIndicator(assessment.bone_mass_kg, 2, " kg")} />
         <InfoItem label="Masa muscular" value={formatIndicator(assessment.muscle_mass_kg, 2, " kg")} />
         <InfoItem label="% Masa grasa" value={formatPercentage(assessment.fat_percentage)} />
