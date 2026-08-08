@@ -1,5 +1,11 @@
+"use client";
+
 import { ConfirmActionButton } from "@/components/ui/confirm-action-button";
 import { setUserStatus } from "@/lib/usuarios/actions";
+
+// Client Component a propósito: mismo motivo que PlayerStatusToggle -- el
+// closure `() => setUserStatus(...)` que se le pasa a ConfirmActionButton
+// (Client Component) no puede crearse en servidor sin marcar "use server".
 
 export function UserStatusToggle({ userId, userName, status }: {
   userId: string;

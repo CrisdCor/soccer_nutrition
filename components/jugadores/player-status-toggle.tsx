@@ -1,5 +1,13 @@
+"use client";
+
 import { ConfirmActionButton } from "@/components/ui/confirm-action-button";
 import { setPlayerStatus } from "@/lib/jugadores/actions";
+
+// Client Component a propósito: arma un closure `() => setPlayerStatus(...)`
+// para pasárselo a ConfirmActionButton (también "use client"). Si este
+// componente fuera Server Component, ese closure se crearía en servidor sin
+// estar marcado "use server" -- exactamente el error de serialización que
+// tumbó /jugadores en producción.
 
 export function PlayerStatusToggle({ playerId, playerName, status }: {
   playerId: string;
