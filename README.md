@@ -36,20 +36,27 @@ Al importar este repositorio en Vercel, configura estas variables de entorno
 ## Estructura
 
 ```
-app/login/            Ruta pública (única) — formulario de acceso
-app/(app)/            Rutas autenticadas (dashboard, jugadores, valoraciones,
-                      catálogos, configuración, usuarios) — comparten sidebar+header
-components/layout/    Shell de la app (sidebar + header), sensible al rol
-components/auth/      Formulario de login
-lib/supabase/         Clientes de Supabase (browser/server) y tipos generados
-lib/auth/             Contexto de perfil de usuario + server action de logout
-proxy.ts              Protección de rutas y refresco de sesión en cada request
+app/login/                     Ruta pública (única) — formulario de acceso
+app/(app)/dashboard/           Stats + filtro por categoría y sexo
+app/(app)/jugadores/           CRUD de jugadores + perfil con histórico y gráfico
+app/(app)/valoraciones/        Listado, detalle y edición (admin) de valoraciones
+app/(app)/catalogos/           CRUD de posiciones/categorías (admin)
+app/(app)/configuracion/       Umbrales de referencia por métrica (admin)
+app/(app)/usuarios/            Placeholder — próximo módulo (Admin API)
+components/layout/             Shell de la app (sidebar + header), sensible al rol
+lib/calculations/               Fórmulas antropométricas como funciones puras
+lib/{jugadores,valoraciones,   Queries + server actions por dominio
+    catalogos,configuracion}/
+lib/supabase/                  Clientes de Supabase (browser/server) y tipos generados
+lib/auth/                      Perfil de usuario, sesión de servidor, logout
+proxy.ts                       Protección de rutas y refresco de sesión en cada request
 ```
 
 ## Autenticación y roles
 
 No hay registro público: solo `admin` crea usuarios (módulo de Usuarios,
-pendiente). Para crear el primer `admin` de prueba:
+pendiente — usará la Admin API de Supabase). Para crear el primer `admin` de
+prueba:
 
 1. Supabase Dashboard → **Authentication → Add user**, con **User Metadata**:
    ```json
@@ -62,7 +69,17 @@ pendiente). Para crear el primer `admin` de prueba:
 
 `proxy.ts` (el middleware, renombrado según la convención de Next.js 16)
 exige sesión en toda ruta salvo `/login`, y exige además `role = 'admin'`
-(verificado contra `user_profiles`, no contra el JWT) para `/usuarios`.
+(verificado contra `user_profiles`, no contra el JWT) para `/usuarios`,
+`/catalogos` y `/configuracion` — igual que sus políticas RLS.
+
+## Cálculos antropométricos
+
+`lib/calculations/` implementa cada fórmula (Suma 6 Pliegues, perímetros
+corregidos, Rocha, Lee 2000, Yuhasz, masa adiposa/residual, IMC, AKS) como una
+función pura e independiente — nunca traducción literal del Excel. Regla
+transversal: si falta un dato de entrada, el indicador queda `null` ("dato
+insuficiente"), nunca se asume `0` ni se propaga en cascada. `lib/format.ts`
+muestra esos `null` como "Dato insuficiente" en toda la UI.
 
 ## Esquema de base de datos
 

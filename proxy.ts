@@ -6,9 +6,11 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // Única ruta pública de la app. Todo lo demás requiere sesión por defecto
-// (deny-by-default), y /usuarios además requiere role = 'admin'.
+// (deny-by-default). Estos prefijos además requieren role = 'admin', igual
+// que las políticas RLS de positions/categories/reference_thresholds
+// ("ALL ... current_user_role() = 'admin'") y de /usuarios (gestión futura).
 const PUBLIC_ROUTES = ["/login"];
-const ADMIN_ROUTE_PREFIX = "/usuarios";
+const ADMIN_ROUTE_PREFIXES = ["/usuarios", "/catalogos", "/configuracion"];
 
 export async function proxy(request: NextRequest) {
   // response empieza como passthrough; createServerClient la reasigna cada
@@ -55,10 +57,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // 3) /usuarios requiere role = 'admin'. Se verifica contra user_profiles
-  //    (no contra metadata del JWT, que puede quedar desactualizada si el
-  //    rol cambió después de emitido el token).
-  if (user && pathname.startsWith(ADMIN_ROUTE_PREFIX)) {
+  // 3) Rutas admin-only. Se verifica contra user_profiles (no contra
+  //    metadata del JWT, que puede quedar desactualizada si el rol cambió
+  //    después de emitido el token).
+  if (user && ADMIN_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     const { data: profile } = await supabase
       .from("user_profiles")
       .select("role")

@@ -1,18 +1,63 @@
-export default function DashboardPage() {
+import { DashboardFilterBar } from "@/components/dashboard/filter-bar";
+import { listCategories } from "@/lib/catalogos/queries";
+import { getDashboardStats } from "@/lib/dashboard/queries";
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string; sex?: string }>;
+}) {
+  const { category, sex } = await searchParams;
+  const sexFilter = sex === "Hombre" || sex === "Mujer" ? sex : undefined;
+
+  const [stats, categories] = await Promise.all([
+    getDashboardStats({ categoryId: category, sex: sexFilter }),
+    listCategories({ activeOnly: true }),
+  ]);
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-foreground">Dashboard</h2>
-        <p className="text-sm text-muted">
-          Scaffold inicial. Los módulos del MVP (Jugadores, Valoraciones, Catálogos,
-          Configuración, Usuarios) se construyen en los siguientes pasos.
-        </p>
+        <p className="text-sm text-muted">Vista general filtrable por categoría y sexo.</p>
       </div>
 
+      <DashboardFilterBar categories={categories} />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Jugadores activos" value="—" />
-        <StatCard label="Valoraciones registradas" value="—" />
-        <StatCard label="AKS fuera de umbral" value="—" />
+        <StatCard label="Jugadores activos" value={String(stats.playersCount)} />
+        <StatCard label="Valoraciones registradas" value={String(stats.assessmentsCount)} />
+        <StatCard label="AKS fuera de umbral" value={String(stats.outOfThresholdCount)} />
+      </div>
+
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-border text-xs text-muted">
+              <th className="px-4 py-3 font-medium">Jugador</th>
+              <th className="px-4 py-3 font-medium">Sexo</th>
+              <th className="px-4 py-3 font-medium">Posición</th>
+              <th className="px-4 py-3 font-medium">Categoría</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stats.players.map((player) => (
+              <tr key={player.id} className="border-b border-border last:border-0">
+                <td className="px-4 py-3 font-medium text-foreground">{player.full_name}</td>
+                <td className="px-4 py-3 text-muted">{player.sex}</td>
+                <td className="px-4 py-3 text-muted">{player.position?.name ?? "—"}</td>
+                <td className="px-4 py-3 text-muted">{player.category?.name ?? "—"}</td>
+              </tr>
+            ))}
+            {stats.players.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted">
+                  No hay jugadores activos con estos filtros.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
