@@ -113,14 +113,30 @@ exclusivamente por `lib/supabase/admin.ts` (service_role) en servidor:
 - Se gestiona desde el perfil (`/jugadores/[id]`) y desde "Editar" — no desde
   "Nuevo jugador", porque el path de Storage necesita un `id` de jugador que
   todavía no existe en ese punto del flujo.
+- Carga hover-to-edit (`components/jugadores/player-photo-uploader.tsx`): sin
+  botón ni input visible — el círculo de la foto es el control. Al hover
+  aparece un scrim (`bg-black/40`, mismo lenguaje que el modal de
+  confirmación) con un ícono de editar; el clic dispara un
+  `<input type="file" className="hidden">` vía `ref`, y `onChange` hace
+  `requestSubmit()` del formulario automáticamente (no hace falta botón).
 
 ## Perfil de jugador
 
+Encabezado unificado (una sola card): foto con badge del año de nacimiento
+superpuesto (`<span>`, no interactivo) → nombre + badge "Inactivo" si
+corresponde + subtítulo `Categoría · Cantera` → dos filas de datos
+(Posición/Edad/Peso/Talla, luego IMC/%Grasa/IAKS). Peso, Talla, IMC, %Grasa y
+AKS salen de la valoración más reciente del jugador (no son campos propios
+del jugador) — si todavía no tiene ninguna, esos 5 campos muestran "Dato
+insuficiente" sin romper el layout. Sexo y Raza se retiraron de esta vista
+(siguen editables desde "Editar"); Estado ya no es una card más, es el badge
+"Inactivo" junto al nombre (no se muestra nada cuando el jugador está activo).
+
 Las acciones "Editar"/"Inactivar" viven en un menú "•••"
-(`components/jugadores/player-actions-menu.tsx`, Radix DropdownMenu) en vez de
-botones sueltos — pensado para que quepan más acciones a futuro sin saturar
-la card. "Nueva valoración" queda fuera, visible aparte, por ser la más
-frecuente.
+(`components/jugadores/player-actions-menu.tsx`, Radix DropdownMenu), en la
+esquina superior derecha de esa card, en vez de botones sueltos — pensado
+para que quepan más acciones a futuro sin saturarla. "Nueva valoración" queda
+fuera, junto a los tabs de valoraciones, por ser la más frecuente.
 
 La sección de valoraciones tiene dos tabs:
 
