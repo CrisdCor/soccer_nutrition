@@ -11,6 +11,7 @@ Excel actual.
 - **Formularios:** react-hook-form + zod
 - **Gráficos:** recharts
 - **Cliente Supabase:** @supabase/ssr (browser + server, con cookies de sesión)
+- **UI headless:** @radix-ui/react-dropdown-menu, @radix-ui/react-tabs (estilizados a mano con el Design System, sin librería de componentes completa)
 
 ## Desarrollo local
 
@@ -108,6 +109,30 @@ exclusivamente por `lib/supabase/admin.ts` (service_role) en servidor:
 - Se gestiona desde el perfil (`/jugadores/[id]`) y desde "Editar" — no desde
   "Nuevo jugador", porque el path de Storage necesita un `id` de jugador que
   todavía no existe en ese punto del flujo.
+
+## Perfil de jugador
+
+Las acciones "Editar"/"Inactivar" viven en un menú "•••"
+(`components/jugadores/player-actions-menu.tsx`, Radix DropdownMenu) en vez de
+botones sueltos — pensado para que quepan más acciones a futuro sin saturar
+la card. "Nueva valoración" queda fuera, visible aparte, por ser la más
+frecuente.
+
+La sección de valoraciones tiene dos tabs:
+
+- **Evolución**: lo que ya existía — gráfico + tabla comparativa en el tiempo.
+- **Reporte**: selector de una valoración puntual + encabezado tipo informe
+  (foto, IMC, %Grasa Yuhasz y AKS con su clasificación contra los umbrales
+  configurables de `reference_thresholds`) + el detalle completo de mediciones
+  (`components/valoraciones/assessment-detail-groups.tsx`, compartido con
+  `/valoraciones/[id]` para no duplicar el desglose). Diagnóstico nutricional
+  y Plan de alimentación quedan como placeholder "próximamente": se
+  construyen en el módulo de Plan de Alimentación (handoff aparte).
+
+La clasificación de %Grasa reutiliza el umbral de `skinfold_sum` (no hay un
+umbral separado para el porcentaje: al derivarse monótonamente de la Suma 6
+Pliegues, clasificar por ese umbral equivale a clasificar el %Grasa). Ver
+`classifyByThreshold` en `lib/format.ts`.
 
 ## Cálculos antropométricos
 

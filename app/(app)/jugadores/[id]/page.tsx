@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AssessmentEvolutionChart } from "@/components/jugadores/assessment-evolution-chart";
-import { PlayerAssessmentsTable } from "@/components/jugadores/player-assessments-table";
+import { PlayerActionsMenu } from "@/components/jugadores/player-actions-menu";
+import { PlayerAssessmentsTabs } from "@/components/jugadores/player-assessments-tabs";
 import { PlayerPhotoUploader } from "@/components/jugadores/player-photo-uploader";
-import { PlayerStatusToggle } from "@/components/jugadores/player-status-toggle";
 import { computeDisplayAge } from "@/lib/calculations";
+import { getCurrentThresholds } from "@/lib/configuracion/queries";
 import { getPlayerById, getPlayerPhotoUrl } from "@/lib/jugadores/queries";
 import { listAssessmentsByPlayer } from "@/lib/valoraciones/queries";
 
@@ -14,9 +13,10 @@ export default async function PlayerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [player, assessments] = await Promise.all([
+  const [player, assessments, thresholds] = await Promise.all([
     getPlayerById(id),
     listAssessmentsByPlayer(id),
+    getCurrentThresholds(),
   ]);
 
   if (!player) {
@@ -25,11 +25,6 @@ export default async function PlayerDetailPage({
 
   const photoUrl = await getPlayerPhotoUrl(player.photo_path);
   const age = computeDisplayAge(new Date(player.birth_date));
-  const chartPoints = assessments.map((a) => ({
-    date: a.assessment_date,
-    weightKg: a.weight_kg,
-    fatPercentage: a.fat_percentage != null ? a.fat_percentage * 100 : null,
-  }));
 
   return (
     <div className="space-y-6">
@@ -41,12 +36,7 @@ export default async function PlayerDetailPage({
             <p className="data text-sm text-muted">{player.document}</p>
           </div>
         </div>
-        <div className="flex shrink-0 gap-2">
-          <Link href={`/jugadores/${player.id}/editar`} className="btn-secondary">
-            Editar
-          </Link>
-          <PlayerStatusToggle playerId={player.id} playerName={player.full_name} status={player.status} />
-        </div>
+        <PlayerActionsMenu playerId={player.id} playerName={player.full_name} status={player.status} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -59,17 +49,14 @@ export default async function PlayerDetailPage({
         <InfoCard label="Estado" value={player.status === "active" ? "Activo" : "Inactivo"} />
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground">Valoraciones</h3>
-          <Link href={`/jugadores/${player.id}/valoraciones/nueva`} className="btn-primary">
-            Nueva valoración
-          </Link>
-        </div>
-
-        <AssessmentEvolutionChart points={chartPoints} />
-        <PlayerAssessmentsTable assessments={assessments} />
-      </div>
+      <PlayerAssessmentsTabs
+        playerId={player.id}
+        playerName={player.full_name}
+        playerDocument={player.document}
+        photoUrl={photoUrl}
+        assessments={assessments}
+        thresholds={thresholds}
+      />
     </div>
   );
 }

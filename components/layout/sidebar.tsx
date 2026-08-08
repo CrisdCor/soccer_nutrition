@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUserProfile } from "@/lib/auth/user-profile-context";
@@ -31,7 +32,7 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex md:w-60 md:flex-col md:border-r md:border-border md:bg-surface">
       <div className="flex h-16 items-center gap-2 border-b border-border px-5">
-        <span className="h-2 w-2 rounded-full bg-brand-red" aria-hidden />
+        <Image src="/logo.webp" alt="" width={24} height={24} aria-hidden />
         <span className="text-sm font-semibold tracking-tight text-foreground">
           Soccer Nutrition
         </span>
