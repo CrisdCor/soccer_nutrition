@@ -11,6 +11,11 @@ type UploadState = { error?: string } | null;
  * con un ícono de editar; el clic dispara el input de archivo oculto. El
  * badge de año de nacimiento (birthYear) es opcional y puramente visual --
  * no se muestra en el formulario de edición, solo en el encabezado del perfil.
+ *
+ * En mobile no existe :hover, así que el scrim nunca se ve por sí solo --
+ * se agrega un ícono chico siempre visible en la esquina (sm:hidden, el
+ * hover-reveal de desktop ya cumple ese rol de ahí en adelante) para que
+ * la acción sea descubrible sin depender de que alguien toque "a ciegas".
  */
 export function PlayerPhotoUploader({
   playerId,
@@ -54,22 +59,19 @@ export function PlayerPhotoUploader({
             {isPending ? (
               <span className="text-[10px] font-medium text-white">Subiendo…</span>
             ) : (
-              <svg
-                viewBox="0 0 20 20"
-                fill="none"
-                className="h-5 w-5 text-white"
-                aria-hidden
-              >
-                <path
-                  d="M13.5 3.5l3 3L7 16H4v-3l9.5-9.5z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <EditIcon className="h-5 w-5 text-white" />
             )}
           </span>
         </button>
+
+        {/* Ícono siempre visible en mobile (sin :hover) -- discreto, en la
+            esquina, para que la acción sea descubrible sin depender del tap
+            "a ciegas". De sm en adelante el hover-reveal de arriba alcanza. */}
+        {!isPending && (
+          <span className="absolute -right-0.5 -top-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface shadow-sm sm:hidden">
+            <EditIcon className="h-3 w-3 text-muted" />
+          </span>
+        )}
 
         {birthYear != null && (
           <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-medium text-foreground">
@@ -89,5 +91,13 @@ export function PlayerPhotoUploader({
 
       {state?.error && <p className="mt-1 max-w-[6rem] text-center text-xs text-brand-red">{state.error}</p>}
     </form>
+  );
+}
+
+function EditIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden>
+      <path d="M13.5 3.5l3 3L7 16H4v-3l9.5-9.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
   );
 }

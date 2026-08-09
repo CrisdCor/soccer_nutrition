@@ -32,7 +32,8 @@ export function ReportFilters({
   onValoracionChange: (label: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-3">
+    // Scroll horizontal en mobile en vez de wrap -- ver DashboardFilterBar.
+    <div className="flex gap-3 overflow-x-auto pb-1 [&>*]:shrink-0 sm:flex-wrap sm:overflow-visible sm:pb-0">
       <FilterSelect
         aria-label="Filtrar por posición"
         value={positionId}

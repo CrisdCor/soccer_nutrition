@@ -68,7 +68,8 @@ export function PlayersTable({ players }: { players: PlayerRow[] }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-3">
+      {/* Scroll horizontal en mobile en vez de wrap -- ver DashboardFilterBar. */}
+      <div className="flex gap-3 overflow-x-auto pb-1 [&>*]:shrink-0 sm:flex-wrap sm:overflow-visible sm:pb-0">
         <input
           type="text"
           className="input max-w-xs"

@@ -22,7 +22,11 @@ export function DashboardFilterBar({ categories }: { categories: Option[] }) {
   }
 
   return (
-    <div className="flex flex-wrap gap-3">
+    // Scroll horizontal en mobile en vez de wrap a varias líneas -- con 2+
+    // chips de filtro, envolver come más alto útil que dejarlos deslizables
+    // en una sola fila (patrón común en apps mobile). sm: en adelante vuelve
+    // a wrap normal, sin scroll.
+    <div className="flex gap-3 overflow-x-auto pb-1 [&>*]:shrink-0 sm:flex-wrap sm:overflow-visible sm:pb-0">
       <FilterSelect
         aria-label="Filtrar por categoría"
         value={searchParams.get("category") ?? ALL}

@@ -98,7 +98,8 @@ export function PlayerSummaryReport({
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
+      {/* Scroll horizontal en mobile en vez de wrap -- ver DashboardFilterBar. */}
+      <div className="flex items-center gap-3 overflow-x-auto pb-1 [&>*]:shrink-0 sm:flex-wrap sm:overflow-visible sm:pb-0">
         <FilterSelect
           aria-label="Filtrar por categoría"
           value={categoryId}
