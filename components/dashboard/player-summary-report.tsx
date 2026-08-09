@@ -1,15 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { ALL, LATEST } from "@/lib/dashboard/report-helpers";
 import type { ReportAssessment, ReportPlayer } from "@/lib/dashboard/report-queries";
 import { formatIndicator } from "@/lib/format";
+import type { ThresholdRange } from "@/lib/format";
 
 type CatalogOption = { id: string; name: string };
 
 const RED = "#c8102e";
+const BLUE = "#1d3557";
 const BORDER = "#e4e4e7";
 const MUTED = "#71717a";
 
@@ -32,16 +34,23 @@ const SKINFOLD_AXES: { key: keyof ReportAssessment; label: string }[] = [
  * de la valoración elegida y la evolución de AKS a través de todas sus
  * valoraciones. Métrica de evolución: Índice AKS, por ser el indicador más
  * directamente ligado a este análisis de composición corporal -- si se
- * prefiere Peso o Suma de Pliegues, es un cambio de una línea.
+ * prefiere Peso o Suma de Pliegues, es un cambio de una línea. Único
+ * gráfico de línea de las 5 visualizaciones (el resto son barras): acá sí
+ * tiene sentido, porque el eje X es tiempo (valoraciones sucesivas del
+ * mismo jugador) y lo que importa es la tendencia, no comparar barras
+ * entre sí. Con líneas de referencia horizontales del umbral AKS, igual
+ * que el resto de las vistas con umbral configurado.
  */
 export function PlayerSummaryReport({
   players,
   assessmentsByPlayer,
   categories,
+  threshold,
 }: {
   players: ReportPlayer[];
   assessmentsByPlayer: Map<string, ReportAssessment[]>;
   categories: CatalogOption[];
+  threshold: ThresholdRange | null;
 }) {
   const [categoryId, setCategoryId] = useState(ALL);
   const [playerId, setPlayerId] = useState("");
@@ -154,7 +163,7 @@ export function PlayerSummaryReport({
               <h4 className="px-1 text-sm font-semibold text-foreground">Evolución -- Índice AKS</h4>
               <div style={{ height: 320 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={evolutionData} margin={{ top: 8, right: 16, left: 0, bottom: 56 }}>
+                  <LineChart data={evolutionData} margin={{ top: 8, right: 16, left: 0, bottom: 56 }}>
                     <CartesianGrid stroke={BORDER} vertical={false} />
                     <XAxis
                       dataKey="name"
@@ -169,8 +178,28 @@ export function PlayerSummaryReport({
                       contentStyle={{ fontSize: 12, borderRadius: 6, borderColor: BORDER }}
                       formatter={(value) => formatIndicator(typeof value === "number" ? value : null, 2)}
                     />
-                    <Bar dataKey="aks_index" name="Índice AKS" fill={RED} radius={[2, 2, 0, 0]} />
-                  </BarChart>
+                    {threshold && (
+                      <>
+                        <ReferenceLine
+                          y={threshold.low_cut}
+                          stroke={BLUE}
+                          strokeDasharray="4 4"
+                          label={{ value: `Mín ${threshold.low_cut}`, position: "insideBottomLeft", fontSize: 10, fill: BLUE }}
+                        />
+                        <ReferenceLine
+                          y={threshold.high_cut}
+                          stroke={BLUE}
+                          strokeDasharray="4 4"
+                          label={{ value: `Máx ${threshold.high_cut}`, position: "insideTopLeft", fontSize: 10, fill: BLUE }}
+                        />
+                      </>
+                    )}
+                    {/* connectNulls deliberadamente en false (default): una
+                        valoración sin AKS calculado corta la línea en vez de
+                        interpolar entre las vecinas -- "dato insuficiente"
+                        nunca se disimula como una tendencia continua. */}
+                    <Line type="monotone" dataKey="aks_index" name="Índice AKS" stroke={RED} strokeWidth={2} dot={{ r: 3, fill: RED }} />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>

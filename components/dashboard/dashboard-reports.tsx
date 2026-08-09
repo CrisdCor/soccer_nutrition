@@ -102,7 +102,12 @@ export function DashboardReports({
         </Segmented.Content>
 
         <Segmented.Content value="resumen-jugador" className="min-h-0 flex-1">
-          <PlayerSummaryReport players={players} assessmentsByPlayer={assessmentsByPlayer} categories={categories} />
+          <PlayerSummaryReport
+            players={players}
+            assessmentsByPlayer={assessmentsByPlayer}
+            categories={categories}
+            threshold={thresholds.aks_index}
+          />
         </Segmented.Content>
       </Segmented.Root>
     </div>

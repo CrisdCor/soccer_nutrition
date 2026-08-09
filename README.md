@@ -311,11 +311,17 @@ la página; cada vista maneja su propio scroll vertical interno.
   (encabezados clicables, asc/desc).
 - Resumen por Jugador es la única vista sin "vista general": exige elegir un
   jugador (se autoselecciona el primero disponible para no arrancar vacía).
-  Radar de 8 pliegues cutáneos de la valoración elegida + barras de
-  evolución de Índice AKS a través de todas sus valoraciones — se eligió AKS
-  por ser el indicador más directamente ligado a este análisis; cambiarlo a
-  Peso o Suma de Pliegues es una línea. Sin Top N (no hay nada que rankear
-  con un solo jugador).
+  Radar de 8 pliegues cutáneos de la valoración elegida + evolución de
+  Índice AKS a través de todas sus valoraciones — se eligió AKS por ser el
+  indicador más directamente ligado a este análisis; cambiarlo a Peso o
+  Suma de Pliegues es una línea. Sin Top N (no hay nada que rankear con un
+  solo jugador). La evolución es el único gráfico de LÍNEA de las 5
+  visualizaciones (el resto son barras): tiene sentido acá porque el eje X
+  es tiempo y lo que importa es la tendencia, no comparar valores entre sí
+  — con las mismas líneas de referencia horizontales del umbral AKS que el
+  resto de las vistas, y sin conectar puntos a través de una valoración sin
+  AKS calculado (`connectNulls` en false: "dato insuficiente" nunca se
+  disimula como una tendencia continua).
 - Pliegue sin dato en el radar: se grafica como 0 (recharts no soporta
   "hueco" en un polígono cerrado) pero se lista aparte, explícito, arriba
   del gráfico ("Dato insuficiente: ...") — nunca 0 silencioso.
