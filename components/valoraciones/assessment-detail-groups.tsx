@@ -44,8 +44,9 @@ export type AssessmentDetailFields = {
 
 /**
  * Los 4 grupos de detalle de una valoración (medidas, pliegues, perímetros/
- * diámetros, indicadores calculados). Compartido entre /valoraciones/[id] y
- * el tab "Reporte" del perfil de jugador, para no duplicar el desglose.
+ * diámetros, indicadores calculados). Compartido entre AssessmentDetailSheet
+ * y AssessmentFormSheet (valores por defecto del formulario de edición),
+ * para no duplicar el desglose de campos.
  */
 export function AssessmentDetailGroups({ assessment }: { assessment: AssessmentDetailFields }) {
   return (

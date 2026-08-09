@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import * as Tabs from "@/components/ui/tabs";
-import { AssessmentEvolutionChart } from "@/components/jugadores/assessment-evolution-chart";
 import { PlayerAssessmentsTable } from "@/components/jugadores/player-assessments-table";
-import { PlayerReportTab } from "@/components/jugadores/player-report-tab";
+import { PlayerNutritionPlanTab } from "@/components/jugadores/player-nutrition-plan-tab";
+import { AssessmentFormSheet } from "@/components/valoraciones/assessment-form-sheet";
+import { NutritionPlanSheet } from "@/components/nutricion/nutrition-plan-sheet";
 import type { AssessmentDetailFields } from "@/components/valoraciones/assessment-detail-groups";
 import type { ThresholdRange } from "@/lib/format";
 import type { NutritionPlanFull } from "@/lib/nutricion/queries";
@@ -13,13 +14,20 @@ type Assessment = AssessmentDetailFields & { id: string; assessment_date: string
 type CatalogOption = { id: string; name: string };
 type MealType = { id: number; name: string; sort_order: number };
 
+/**
+ * Dos pestañas del perfil de jugador:
+ *  - "Valoraciones": solo la tabla comparativa (el gráfico de evolución se
+ *    retiró de acá).
+ *  - "Plan Nutricional": lectura + selector de valoración, ver
+ *    PlayerNutritionPlanTab.
+ * Ambas acciones del encabezado ("Nueva valoración" y "Crear
+ * plan"/"Editar plan") abren paneles laterales en vez de navegar a
+ * pantallas separadas -- ya no hay rutas standalone de valoraciones.
+ */
 export function PlayerAssessmentsTabs({
   playerId,
-  playerName,
-  playerDocument,
   playerSex,
   playerBirthDate,
-  photoUrl,
   assessments,
   thresholds,
   nutritionPlansByAssessment,
@@ -28,12 +36,9 @@ export function PlayerAssessmentsTabs({
   mealTypes,
 }: {
   playerId: string;
-  playerName: string;
-  playerDocument: string;
   playerSex: "Hombre" | "Mujer";
   playerBirthDate: string;
-  photoUrl: string | null;
-  /** Ascendente por fecha (para el gráfico de evolución). */
+  /** Ascendente por fecha. */
   assessments: Assessment[];
   thresholds: { skinfold_sum: ThresholdRange | null; aks_index: ThresholdRange | null };
   nutritionPlansByAssessment: Record<string, NutritionPlanFull>;
@@ -41,38 +46,55 @@ export function PlayerAssessmentsTabs({
   foodGroups: CatalogOption[];
   mealTypes: MealType[];
 }) {
-  const chartPoints = assessments.map((a) => ({
-    date: a.assessment_date,
-    weightKg: a.weight_kg,
-    fatPercentage: a.fat_percentage != null ? a.fat_percentage * 100 : null,
-  }));
+  const [newAssessmentOpen, setNewAssessmentOpen] = useState(false);
+  const [planOpen, setPlanOpen] = useState(false);
+
+  const latestAssessment = assessments.at(-1) ?? null;
+  const latestHasPlan = latestAssessment ? Boolean(nutritionPlansByAssessment[latestAssessment.id]) : false;
 
   return (
-    <Tabs.Root defaultValue="evolucion">
+    <Tabs.Root defaultValue="valoraciones">
       <div className="flex items-center justify-between">
         <Tabs.List>
-          <Tabs.Trigger value="evolucion">Evolución</Tabs.Trigger>
-          <Tabs.Trigger value="reporte">Reporte</Tabs.Trigger>
+          <Tabs.Trigger value="valoraciones">Valoraciones</Tabs.Trigger>
+          <Tabs.Trigger value="plan-nutricional">Plan Nutricional</Tabs.Trigger>
         </Tabs.List>
 
-        <Link href={`/jugadores/${playerId}/valoraciones/nueva`} className="btn-primary">
-          Nueva valoración
-        </Link>
+        <div className="flex gap-2">
+          {latestAssessment ? (
+            <button type="button" onClick={() => setPlanOpen(true)} className="btn-secondary">
+              {latestHasPlan ? "Editar plan" : "Crear plan"}
+            </button>
+          ) : (
+            <button type="button" disabled title="Registra una valoración primero" className="btn-secondary">
+              Crear plan
+            </button>
+          )}
+          <button type="button" onClick={() => setNewAssessmentOpen(true)} className="btn-primary">
+            Nueva valoración
+          </button>
+        </div>
       </div>
 
-      <Tabs.Content value="evolucion" className="space-y-4 pt-4">
-        <AssessmentEvolutionChart points={chartPoints} />
-        <PlayerAssessmentsTable assessments={assessments} />
-      </Tabs.Content>
-
-      <Tabs.Content value="reporte" className="pt-4">
-        <PlayerReportTab
+      <Tabs.Content value="valoraciones" className="pt-4">
+        <PlayerAssessmentsTable
           playerId={playerId}
-          playerName={playerName}
-          playerDocument={playerDocument}
           playerSex={playerSex}
           playerBirthDate={playerBirthDate}
-          photoUrl={photoUrl}
+          assessments={assessments}
+          thresholds={thresholds}
+          nutritionPlansByAssessment={nutritionPlansByAssessment}
+          dietTypes={dietTypes}
+          foodGroups={foodGroups}
+          mealTypes={mealTypes}
+        />
+      </Tabs.Content>
+
+      <Tabs.Content value="plan-nutricional" className="pt-4">
+        <PlayerNutritionPlanTab
+          playerId={playerId}
+          playerSex={playerSex}
+          playerBirthDate={playerBirthDate}
           assessments={[...assessments].reverse()}
           thresholds={thresholds}
           nutritionPlansByAssessment={nutritionPlansByAssessment}
@@ -81,6 +103,24 @@ export function PlayerAssessmentsTabs({
           mealTypes={mealTypes}
         />
       </Tabs.Content>
+
+      <AssessmentFormSheet mode="create" playerId={playerId} open={newAssessmentOpen} onOpenChange={setNewAssessmentOpen} />
+
+      {latestAssessment && (
+        <NutritionPlanSheet
+          playerId={playerId}
+          playerSex={playerSex}
+          playerBirthDate={playerBirthDate}
+          assessment={latestAssessment}
+          existingPlan={nutritionPlansByAssessment[latestAssessment.id] ?? null}
+          thresholds={thresholds}
+          dietTypes={dietTypes}
+          foodGroups={foodGroups}
+          mealTypes={mealTypes}
+          open={planOpen}
+          onOpenChange={setPlanOpen}
+        />
+      )}
     </Tabs.Root>
   );
 }

@@ -13,31 +13,14 @@ const ASSESSMENT_COLUMNS = `
   created_at, updated_at, player_id
 `;
 
-export async function listAssessments() {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("assessments")
-    .select(`id, assessment_date, label, weight_kg, fat_percentage, aks_index, player:players(id, full_name)`)
-    .order("assessment_date", { ascending: false });
-
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function getAssessmentById(id: string) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("assessments")
-    .select(`${ASSESSMENT_COLUMNS}, player:players(id, full_name, sex)`)
-    .eq("id", id)
-    .single();
-
-  if (error) return null;
-  return data;
-}
-
+/**
+ * Todas las valoraciones del jugador, con el detalle completo -- se piden
+ * una sola vez por carga de perfil y de ahí salen tanto la tabla como los
+ * paneles laterales (detalle, formulario de edición, plan nutricional), sin
+ * pedir de nuevo al servidor al abrir cada uno. No hay vista global de
+ * valoraciones de todos los jugadores (se retiró del sidebar): todo se
+ * consulta desde el perfil de cada jugador.
+ */
 export async function listAssessmentsByPlayer(playerId: string) {
   const supabase = await createClient();
 

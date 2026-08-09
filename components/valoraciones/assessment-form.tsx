@@ -10,9 +10,15 @@ type AssessmentFormProps = {
   defaultValues?: Partial<AssessmentFormValues>;
   action: (values: AssessmentFormValues) => Promise<{ error?: string } | void>;
   submitLabel: string;
+  /** Ya no hay redirect() en la server action (no hay a dónde navegar desde
+   * un panel lateral): esto le avisa al panel que se guardó bien para que
+   * se cierre y refresque los datos. */
+  onSuccess?: () => void;
+  /** Botón "Cancelar" opcional -- típicamente cierra el panel sin guardar. */
+  onCancel?: () => void;
 };
 
-export function AssessmentForm({ defaultValues, action, submitLabel }: AssessmentFormProps) {
+export function AssessmentForm({ defaultValues, action, submitLabel, onSuccess, onCancel }: AssessmentFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -35,7 +41,9 @@ export function AssessmentForm({ defaultValues, action, submitLabel }: Assessmen
     const result = await action(values);
     if (result?.error) {
       setFormError(result.error);
+      return;
     }
+    onSuccess?.();
   }
 
   return (
@@ -85,9 +93,16 @@ export function AssessmentForm({ defaultValues, action, submitLabel }: Assessmen
         </p>
       )}
 
-      <button type="submit" disabled={isSubmitting} className="btn-primary">
-        {isSubmitting ? "Guardando…" : submitLabel}
-      </button>
+      <div className="flex gap-2">
+        <button type="submit" disabled={isSubmitting} className="btn-primary">
+          {isSubmitting ? "Guardando…" : submitLabel}
+        </button>
+        {onCancel && (
+          <button type="button" onClick={onCancel} disabled={isSubmitting} className="btn-secondary">
+            Cancelar
+          </button>
+        )}
+      </div>
     </form>
   );
 }

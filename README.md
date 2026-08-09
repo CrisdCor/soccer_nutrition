@@ -81,8 +81,7 @@ lo que falló) en vez de asumir que se ve bien.
 e2e/                            Playwright: config, fixtures y specs de UI
 app/login/                     Ruta pública (única) — formulario de acceso
 app/(app)/dashboard/           Stats + filtro por categoría y sexo
-app/(app)/jugadores/           CRUD de jugadores + perfil con histórico y gráfico
-app/(app)/valoraciones/        Listado, detalle y edición (admin) de valoraciones
+app/(app)/jugadores/           CRUD de jugadores + perfil (valoraciones y plan en paneles laterales)
 app/(app)/catalogos/           CRUD de posiciones/categorías (admin)
 app/(app)/configuracion/       Umbrales de referencia por métrica (admin)
 app/(app)/usuarios/            CRUD de usuarios vía Admin API (solo admin)
@@ -170,18 +169,45 @@ insuficiente" sin romper el layout. Sexo y Raza se retiraron de esta vista
 Las acciones "Editar"/"Inactivar" viven en un menú "•••"
 (`components/jugadores/player-actions-menu.tsx`, Radix DropdownMenu), en la
 esquina superior derecha de esa card, en vez de botones sueltos — pensado
-para que quepan más acciones a futuro sin saturarla. "Nueva valoración" queda
-fuera, junto a los tabs de valoraciones, por ser la más frecuente.
+para que quepan más acciones a futuro sin saturarla. "Nueva valoración" y
+"Crear plan"/"Editar plan" quedan fuera, junto a los tabs, por ser las
+acciones más frecuentes.
+
+No existe una vista global de valoraciones (no hay `/valoraciones` en el
+sidebar): todo se consulta y edita desde el perfil de cada jugador, en
+paneles laterales (`components/ui/sheet.tsx`, envoltura de
+`@radix-ui/react-dialog` con transición CSS — Radix mantiene el nodo
+montado en `data-state="closed"` durante la transición, así que no hace
+falta `forceMount`) en vez de pantallas separadas. Referencia de
+comportamiento: el panel "Add Environment Variable" de Vercel (solo el
+patrón de interacción, no su estilo — el diseño sigue el propio Design
+System del proyecto).
 
 La sección de valoraciones tiene dos tabs:
 
-- **Evolución**: lo que ya existía — gráfico + tabla comparativa en el tiempo.
-- **Reporte**: selector de una valoración puntual + encabezado tipo informe
-  (foto, IMC, %Grasa Yuhasz y AKS con su clasificación contra los umbrales
-  configurables de `reference_thresholds`) + el detalle completo de mediciones
-  (`components/valoraciones/assessment-detail-groups.tsx`, compartido con
-  `/valoraciones/[id]` para no duplicar el desglose) + el Plan de Alimentación
-  completo de esa valoración (ver sección siguiente).
+- **Valoraciones**: tabla comparativa en el tiempo. La fecha de cada fila
+  abre un panel de solo lectura con el detalle completo de mediciones
+  (`AssessmentDetailSheet` + `components/valoraciones/assessment-detail-groups.tsx`).
+  Un menú "•••" por fila (`assessment-row-actions.tsx`) agrupa "Ver
+  detalle" (mismo panel que la fecha), "Ver/crear plan nutricional" (el
+  panel de plan del punto siguiente, fijado a la valoración de esa fila
+  específica, no necesariamente la más reciente) y, solo para `admin`,
+  "Editar valoración" — se mantiene como tercer ítem aunque no forma parte
+  del pedido original porque `assessments` sigue siendo insert-only para
+  `nutricionista` (UPDATE es admin-only por RLS); quitar la edición hubiera
+  significado perder esa regla de negocio en vez de solo reubicarla.
+- **Plan Nutricional**: selector de valoración (la más reciente que ya
+  tenga plan por defecto; si ninguna tiene, cae en estado vacío con "Crear
+  plan" para la última valoración) + `NutritionPlanReport` de solo lectura
+  si existe, o placeholder + botón si no.
+
+"Nueva valoración" y "Crear plan"/"Editar plan" (este último deshabilitado
+con tooltip "Registra una valoración primero" si el jugador no tiene
+ninguna) abren `AssessmentFormSheet`/`NutritionPlanSheet` en vez de navegar
+— ambos paneles son completamente controlados (`open`/`onOpenChange`, sin
+trigger propio) para poder dispararse tanto desde un botón suelto como
+desde un ítem de un `DropdownMenu` (que no puede anidar su propio trigger
+con estado local, mismo motivo por el que existe `useConfirmDialog`).
 
 La clasificación de %Grasa reutiliza el umbral de `skinfold_sum` (no hay un
 umbral separado para el porcentaje: al derivarse monótonamente de la Suma 6
@@ -193,7 +219,7 @@ Pliegues, clasificar por ese umbral equivale a clasificar el %Grasa). Ver
 Un plan por valoración (`nutrition_plans.assessment_id` es único). A
 diferencia de `assessments` (insert-only, solo admin edita), es un documento
 clínico vivo: **cualquier rol** lo crea y edita libremente (política RLS sin
-restricción), directo desde el tab "Reporte" del perfil — "Crear plan" si no
+restricción), desde el panel `NutritionPlanSheet` — "Crear plan" si no
 existe, "Editar plan" si ya existe.
 
 - `components/nutricion/nutrition-plan-form.tsx`: las 7 secciones (diagnóstico,

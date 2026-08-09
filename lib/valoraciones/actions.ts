@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { requireAdmin, requireProfile } from "@/lib/auth/session";
 import { computeAssessmentIndicators, type RawMeasurements } from "@/lib/calculations";
 import { getPlayerById } from "@/lib/jugadores/queries";
@@ -105,9 +104,11 @@ export async function createAssessment(playerId: string, values: AssessmentFormV
     return { error: error.message };
   }
 
+  // Ya no hay pantalla standalone a la que navegar: la valoración se crea
+  // desde un panel lateral en el perfil del jugador, que se cierra solo y
+  // refresca la tabla con router.refresh() del lado del cliente.
   revalidatePath(`/jugadores/${playerId}`);
-  revalidatePath("/valoraciones");
-  redirect(`/jugadores/${playerId}`);
+  return {};
 }
 
 /**
@@ -204,7 +205,5 @@ export async function updateAssessment(assessmentId: string, values: AssessmentF
   }
 
   revalidatePath(`/jugadores/${existing.player_id}`);
-  revalidatePath(`/valoraciones/${assessmentId}`);
-  revalidatePath("/valoraciones");
-  redirect(`/valoraciones/${assessmentId}`);
+  return {};
 }

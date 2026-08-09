@@ -86,11 +86,8 @@ export default async function PlayerDetailPage({
 
       <PlayerAssessmentsTabs
         playerId={player.id}
-        playerName={player.full_name}
-        playerDocument={player.document}
         playerSex={player.sex}
         playerBirthDate={player.birth_date}
-        photoUrl={photoUrl}
         assessments={assessments}
         thresholds={thresholds}
         nutritionPlansByAssessment={nutritionPlansByAssessment}

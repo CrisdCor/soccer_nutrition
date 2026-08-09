@@ -17,7 +17,6 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Jugadores", href: "/jugadores" },
-  { label: "Valoraciones", href: "/valoraciones" },
   { label: "Catálogos", href: "/catalogos", adminOnly: true },
   { label: "Configuración", href: "/configuracion" },
   { label: "Usuarios", href: "/usuarios", adminOnly: true },
