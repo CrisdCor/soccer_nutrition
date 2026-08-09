@@ -41,9 +41,44 @@ Al importar este repositorio en Vercel, configura estas variables de entorno
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key del proyecto Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role secret del proyecto Supabase (Production **y** Preview) |
 
+## Pruebas E2E (Playwright)
+
+`e2e/` verifica interacciones de UI (hover, menús, modales) que un
+`tsc`/`build`/`lint` no puede detectar — corren contra tu propio
+`localhost:3000`, nunca contra producción.
+
+**Configuración (una sola vez):**
+
+1. Crea un usuario de prueba desde `/usuarios` (mismo flujo real de alta —
+   ej. `qa.testing@soccernutrition.local`, rol `nutricionista`).
+2. Agrega a tu `.env.local` (nunca al repo):
+   ```
+   E2E_TEST_EMAIL=qa.testing@soccernutrition.local
+   E2E_TEST_PASSWORD=lo-que-hayas-definido
+   ```
+
+**Correr las pruebas:**
+
+```bash
+npm run test:e2e
+```
+
+Si `next dev` no está corriendo, Playwright lo levanta solo (y lo apaga al
+terminar); si ya está corriendo, lo reutiliza. Un jugador de prueba
+("Jugador E2E (no borrar)", sin valoraciones) se crea la primera vez que
+corren los tests, vía el propio formulario "Nuevo jugador" — no se escribe
+directo a la base — y se reutiliza en corridas siguientes (nunca se duplica).
+
+`e2e/fixtures/auth.ts` trae el helper de login; `e2e/fixtures/test-player.ts`
+el del jugador de prueba. Antes de dar por terminado un flujo de UI (como el
+menú "•••" o el encabezado del perfil), corre `npm run test:e2e` y revisa el
+reporte HTML (`playwright-report/index.html`, con capturas automáticas de
+lo que falló) en vez de asumir que se ve bien.
+
 ## Estructura
 
 ```
+e2e/                            Playwright: config, fixtures y specs de UI
 app/login/                     Ruta pública (única) — formulario de acceso
 app/(app)/dashboard/           Stats + filtro por categoría y sexo
 app/(app)/jugadores/           CRUD de jugadores + perfil con histórico y gráfico
