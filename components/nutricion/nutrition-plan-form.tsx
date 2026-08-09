@@ -199,6 +199,7 @@ export function NutritionPlanForm({
             <input
               type="number"
               step="1"
+              inputMode="decimal"
               className="input"
               value={state.energy_requirement_kcal}
               onChange={(event) => update("energy_requirement_kcal", event.target.value)}
@@ -221,6 +222,7 @@ export function NutritionPlanForm({
               type="number"
               step="1"
               min="0"
+              inputMode="decimal"
               className="input"
               value={state.caloric_adjustment_magnitude_kcal}
               onChange={(event) => update("caloric_adjustment_magnitude_kcal", event.target.value)}
@@ -230,7 +232,40 @@ export function NutritionPlanForm({
       </Section>
 
       <Section title="4. Distribución de energía y macronutrientes">
-        <div className="overflow-x-auto rounded-lg border border-border">
+        {/* Mobile: una card por componente, gramos/kcal + g/kg en 2 columnas
+            (son los "pares numéricos cortos" del encargo) -- la tabla con
+            scroll lateral se reserva para sm+ (tablet/desktop), sin cambios. */}
+        <div className="space-y-3 sm:hidden">
+          <MacroCard
+            title="Energía (kcal)"
+            gramsLabel="kcal"
+            gramsValue={state.energy_distribution_kcal}
+            onGramsChange={(v) => update("energy_distribution_kcal", v)}
+          />
+          <MacroCard
+            title="Proteína (g)"
+            gramsLabel="Gramos"
+            gramsValue={state.protein_g}
+            onGramsChange={(v) => update("protein_g", v)}
+            perKg={{ value: state.protein_g_per_kg, onChange: (v) => update("protein_g_per_kg", v) }}
+          />
+          <MacroCard
+            title="Grasa (g)"
+            gramsLabel="Gramos"
+            gramsValue={state.fat_g}
+            onGramsChange={(v) => update("fat_g", v)}
+            perKg={{ value: state.fat_g_per_kg, onChange: (v) => update("fat_g_per_kg", v) }}
+          />
+          <MacroCard
+            title="Carbohidratos (g)"
+            gramsLabel="Gramos"
+            gramsValue={state.carbs_g}
+            onGramsChange={(v) => update("carbs_g", v)}
+            perKg={{ value: state.carbs_g_per_kg, onChange: (v) => update("carbs_g_per_kg", v) }}
+          />
+        </div>
+
+        <div className="hidden overflow-x-auto rounded-lg border border-border sm:block">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border text-xs text-muted">
@@ -246,6 +281,7 @@ export function NutritionPlanForm({
                   <input
                     type="number"
                     step="1"
+                    inputMode="decimal"
                     className="input"
                     value={state.energy_distribution_kcal}
                     onChange={(event) => update("energy_distribution_kcal", event.target.value)}
@@ -259,6 +295,7 @@ export function NutritionPlanForm({
                   <input
                     type="number"
                     step="0.1"
+                    inputMode="decimal"
                     className="input"
                     value={state.protein_g}
                     onChange={(event) => update("protein_g", event.target.value)}
@@ -268,6 +305,7 @@ export function NutritionPlanForm({
                   <input
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     className="input"
                     value={state.protein_g_per_kg}
                     onChange={(event) => update("protein_g_per_kg", event.target.value)}
@@ -280,6 +318,7 @@ export function NutritionPlanForm({
                   <input
                     type="number"
                     step="0.1"
+                    inputMode="decimal"
                     className="input"
                     value={state.fat_g}
                     onChange={(event) => update("fat_g", event.target.value)}
@@ -289,6 +328,7 @@ export function NutritionPlanForm({
                   <input
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     className="input"
                     value={state.fat_g_per_kg}
                     onChange={(event) => update("fat_g_per_kg", event.target.value)}
@@ -301,6 +341,7 @@ export function NutritionPlanForm({
                   <input
                     type="number"
                     step="0.1"
+                    inputMode="decimal"
                     className="input"
                     value={state.carbs_g}
                     onChange={(event) => update("carbs_g", event.target.value)}
@@ -310,6 +351,7 @@ export function NutritionPlanForm({
                   <input
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     className="input"
                     value={state.carbs_g_per_kg}
                     onChange={(event) => update("carbs_g_per_kg", event.target.value)}
@@ -325,7 +367,42 @@ export function NutritionPlanForm({
       </Section>
 
       <Section title="5. Porciones por grupo de alimento y comida">
-        <div className="overflow-x-auto rounded-lg border border-border">
+        {/* Mobile: un bloque por grupo de alimento (nombre + total arriba),
+            las comidas en 2 columnas adentro -- la tabla ancha (grupo ×
+            comida) no cabe sin scroll lateral forzado en una pantalla
+            angosta. */}
+        <div className="space-y-3 sm:hidden">
+          {foodGroups.map((foodGroup) => (
+            <div key={foodGroup.id} className="rounded-lg border border-border p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-sm font-medium text-foreground">{foodGroup.name}</p>
+                <p className="data text-sm font-medium text-foreground">{rowTotal(foodGroup.id)} porciones</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {mealTypes.map((mealType) => (
+                  <Field key={mealType.id} label={mealType.name}>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      inputMode="decimal"
+                      className="input"
+                      value={state.portions[portionKey(foodGroup.id, mealType.id)] ?? "0"}
+                      onChange={(event) => updatePortion(foodGroup.id, mealType.id, event.target.value)}
+                    />
+                  </Field>
+                ))}
+              </div>
+            </div>
+          ))}
+          {foodGroups.length === 0 && (
+            <p className="rounded-lg border border-dashed border-border-strong p-4 text-center text-sm text-muted">
+              No hay grupos de alimentos configurados — agrégalos en Configuración.
+            </p>
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto rounded-lg border border-border sm:block">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border text-xs text-muted">
@@ -348,6 +425,7 @@ export function NutritionPlanForm({
                         type="number"
                         step="0.5"
                         min="0"
+                        inputMode="decimal"
                         className="input"
                         style={{ width: "5rem" }}
                         value={state.portions[portionKey(foodGroup.id, mealType.id)] ?? "0"}
@@ -419,5 +497,52 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       <legend className="mb-1 text-sm font-semibold text-foreground">{title}</legend>
       {children}
     </fieldset>
+  );
+}
+
+// Reemplazo mobile de una fila de la tabla de macros: gramos/kcal + g/kg
+// (cuando aplica) en 2 columnas -- Energía no tiene g/kg, así que perKg es
+// opcional y esa card cae a 1 columna.
+function MacroCard({
+  title,
+  gramsLabel,
+  gramsValue,
+  onGramsChange,
+  perKg,
+}: {
+  title: string;
+  gramsLabel: string;
+  gramsValue: string;
+  onGramsChange: (value: string) => void;
+  perKg?: { value: string; onChange: (value: string) => void };
+}) {
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <p className="mb-2 text-sm font-medium text-foreground">{title}</p>
+      <div className={`grid gap-3 ${perKg ? "grid-cols-2" : "grid-cols-1"}`}>
+        <Field label={gramsLabel}>
+          <input
+            type="number"
+            step="0.1"
+            inputMode="decimal"
+            className="input"
+            value={gramsValue}
+            onChange={(event) => onGramsChange(event.target.value)}
+          />
+        </Field>
+        {perKg && (
+          <Field label="g / kg">
+            <input
+              type="number"
+              step="0.01"
+              inputMode="decimal"
+              className="input"
+              value={perKg.value}
+              onChange={(event) => perKg.onChange(event.target.value)}
+            />
+          </Field>
+        )}
+      </div>
+    </div>
   );
 }

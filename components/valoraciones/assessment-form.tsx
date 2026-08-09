@@ -49,10 +49,14 @@ export function AssessmentForm({ defaultValues, action, submitLabel, onSuccess, 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl space-y-8" noValidate>
       <Section title="Datos generales">
-        <Field label="Fecha de la valoración" error={errors.assessment_date?.message}>
+        <Field
+          label="Fecha de la valoración"
+          error={errors.assessment_date?.message}
+          className="col-span-2 sm:col-span-1"
+        >
           <input type="date" className="input" {...register("assessment_date")} />
         </Field>
-        <Field label="Etiqueta" error={errors.label?.message}>
+        <Field label="Etiqueta" error={errors.label?.message} className="col-span-2 sm:col-span-1">
           <input className="input" placeholder="Ej. Pretemporada 2026" {...register("label")} />
         </Field>
         <NumField label="Peso (kg)" name="weight_kg" register={register} errors={errors} />
@@ -111,7 +115,14 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <fieldset className="space-y-4">
       <legend className="mb-1 text-sm font-semibold text-foreground">{title}</legend>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+      {/* grid-cols-2 desde mobile: son puros campos numéricos cortos (peso,
+          talla, cada pliegue/perímetro/diámetro), caben bien de a pares en
+          una pantalla angosta -- el título de sección (<legend>, arriba)
+          ya funciona como separador a ancho completo sin necesitar tocar
+          el grid en sí. sm:grid-cols-2 se mantiene igual (tablet, "2
+          columnas donde hoy hay 3"); lg:grid-cols-3 es desktop, sin
+          cambios. */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
     </fieldset>
   );
 }
@@ -129,7 +140,10 @@ function NumField({
 }) {
   return (
     <Field label={label} error={errors[name]?.message}>
-      <input type="number" step="0.1" className="input" {...register(name)} />
+      {/* inputMode="decimal": en mobile (el uso real -- mediciones cargadas
+          desde el celular en la cancha) muestra el teclado numérico del
+          sistema directo, sin pasar por el alfabético. */}
+      <input type="number" step="0.1" inputMode="decimal" className="input" {...register(name)} />
     </Field>
   );
 }
