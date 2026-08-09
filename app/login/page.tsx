@@ -22,8 +22,8 @@ export default function LoginPage() {
             className="mb-3"
             priority
           />
-          <p className="font-mono text-sm font-semibold tracking-tight text-foreground">
-            NUTRICIÓN_FUERZAS_BÁSICAS
+          <p className="text-sm font-semibold tracking-tight text-foreground">
+            Nutrición Fuerzas Básicas
           </p>
           <p className="mt-1 text-sm text-muted">Independiente Medellín</p>
         </div>

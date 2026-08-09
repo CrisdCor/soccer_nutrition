@@ -81,6 +81,34 @@ body {
 }
 
 /*
+ * <select> nativo, con la flecha de despliegue propia del navegador
+ * desactivada (appearance: none) y reemplazada por un chevron a medida --
+ * el nativo se pinta pegado al borde derecho sin importar el padding que
+ * se le dé al elemento, así que no hay forma de "darle aire" sin tomar
+ * control del ícono. El color del trazo (#71717a) es --color-muted fijo:
+ * no puede leer la variable CSS dentro de un data-URI, y el tema es
+ * exclusivamente claro, así que no hace falta una segunda versión.
+ */
+.select {
+  width: 100%;
+  appearance: none;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2371717a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 7.5 10 12.5 15 7.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.625rem center;
+  background-size: 0.9rem;
+  padding: 0.5rem 2.25rem 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-foreground);
+  outline: none;
+}
+.select:focus {
+  border-color: var(--color-brand-red);
+}
+
+/*
  * El Design System exige fondo blanco en todo input (punto 12): algunos
  * navegadores (gestor de contraseñas de Chrome, autocompletado) pintan un
  * relleno propio (amarillo/azul) sobre los campos con credenciales

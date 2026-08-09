@@ -25,7 +25,7 @@ type Assessment = AssessmentDetailFields & { id: string; assessment_date: string
  * Solo formulario: no hay una vista de solo-lectura separada acá (esa vive
  * en la pestaña "Plan Nutricional" del perfil). Completamente controlado
  * (open/onOpenChange), sin trigger propio -- mismo patrón que
- * AssessmentDetailSheet/AssessmentFormSheet y que useConfirmDialog.
+ * AssessmentDetailSheet/AssessmentFormSheet.
  */
 export function NutritionPlanSheet({
   playerId,

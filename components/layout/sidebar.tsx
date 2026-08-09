@@ -46,10 +46,10 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={[
-                "flex items-center rounded-md border px-3 py-2 text-sm transition-colors",
+                "flex items-center rounded-md px-3 py-2 text-sm transition-colors",
                 isActive
-                  ? "border-brand-red-soft bg-brand-red-soft font-medium text-brand-red"
-                  : "border-transparent text-muted hover:border-border hover:bg-background hover:text-foreground",
+                  ? "bg-brand-red-soft font-medium text-brand-red"
+                  : "text-muted hover:bg-background hover:text-foreground",
               ].join(" ")}
             >
               {item.label}

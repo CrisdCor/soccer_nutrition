@@ -9,9 +9,10 @@ import type { ReactNode } from "react";
  * atrapado, cierra con Escape/clic fuera, desliza desde la derecha), pero
  * estilizado a mano con el Design System del proyecto (superficie blanca,
  * borde fino, sin colores llenos) en vez de copiar el estilo de referencia.
- * Transición vía CSS puro (translate-x + data-state), sin librería de
- * animación: Radix mantiene el nodo montado en data-state="closed" hasta
- * que termina la transición, así que no hace falta forceMount.
+ * Transición vía CSS puro (translate-x + opacity combinados, 300ms
+ * ease-out, según data-state), sin librería de animación: Radix mantiene
+ * el nodo montado en data-state="closed" hasta que termina la transición,
+ * así que no hace falta forceMount.
  *
  * De sm en adelante el panel "flota" (con margen respecto a los bordes
  * superior/derecho/inferior y esquinas redondeadas, como el panel "Add
@@ -46,7 +47,7 @@ export function Content({
         className="fixed inset-0 z-50 bg-black/40 transition-opacity duration-200 data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
       />
       <DialogPrimitive.Content
-        className={`fixed inset-y-0 right-0 z-50 flex h-full w-full flex-col overflow-hidden border-l border-border bg-surface outline-none transition-transform duration-200 ease-out data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 sm:inset-y-4 sm:right-4 sm:h-auto sm:rounded-lg sm:border sm:shadow-md ${SIZE_CLASSES[size]} ${className}`}
+        className={`fixed inset-y-0 right-0 z-50 flex h-full w-full flex-col overflow-hidden border-l border-border bg-surface outline-none transition-[transform,opacity] duration-300 ease-out data-[state=closed]:translate-x-full data-[state=closed]:opacity-0 data-[state=open]:translate-x-0 data-[state=open]:opacity-100 sm:inset-y-4 sm:right-4 sm:h-auto sm:rounded-lg sm:border sm:shadow-md ${SIZE_CLASSES[size]} ${className}`}
         {...props}
       >
         {children}

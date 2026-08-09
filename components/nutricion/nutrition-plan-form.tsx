@@ -206,7 +206,7 @@ export function NutritionPlanForm({
           </Field>
           <Field label="Ajuste calórico">
             <select
-              className="input"
+              className="select"
               value={state.caloric_adjustment_direction}
               onChange={(event) =>
                 update("caloric_adjustment_direction", event.target.value as "deficit" | "superavit")

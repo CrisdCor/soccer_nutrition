@@ -71,14 +71,14 @@ export function PlayerForm({
         </Field>
 
         <Field label="Sexo" error={errors.sex?.message}>
-          <select className="input" {...register("sex")}>
+          <select className="select" {...register("sex")}>
             <option value="Hombre">Hombre</option>
             <option value="Mujer">Mujer</option>
           </select>
         </Field>
 
         <Field label="Raza" error={errors.race_id?.message}>
-          <select className="input" {...register("race_id")}>
+          <select className="select" {...register("race_id")}>
             <option value="">Selecciona…</option>
             {races.map((race) => (
               <option key={race.id} value={race.id}>
@@ -89,7 +89,7 @@ export function PlayerForm({
         </Field>
 
         <Field label="Posición">
-          <select className="input" {...register("position_id")}>
+          <select className="select" {...register("position_id")}>
             <option value="">Sin posición</option>
             {positions.map((position) => (
               <option key={position.id} value={position.id}>
@@ -100,7 +100,7 @@ export function PlayerForm({
         </Field>
 
         <Field label="Categoría">
-          <select className="input" {...register("category_id")}>
+          <select className="select" {...register("category_id")}>
             <option value="">Sin categoría</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>

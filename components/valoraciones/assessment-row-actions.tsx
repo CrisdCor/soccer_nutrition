@@ -29,8 +29,7 @@ type Assessment = AssessmentDetailFields & { id: string; assessment_date: string
  *    updateAssessment().
  *
  * Cada ítem controla el open/onOpenChange de su propio panel -- un
- * DropdownMenu.Item no puede anidar su propio trigger con estado local,
- * mismo motivo por el que useConfirmDialog existe como hook.
+ * DropdownMenu.Item no puede anidar su propio trigger con estado local.
  */
 export function AssessmentRowActions({
   assessment,

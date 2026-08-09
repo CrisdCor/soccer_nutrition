@@ -1,9 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
-import { ConfirmActionButton } from "@/components/ui/confirm-action-button";
+import { Switch } from "@/components/ui/switch";
 import { catalogItemSchema, type CatalogItemValues } from "@/lib/validation/catalog";
 
 type CatalogItem = { id: string; name: string; active: boolean };
@@ -48,26 +48,7 @@ export function CatalogSection({
       <ul className="mt-4 divide-y divide-border">
         {items.length === 0 && <li className="py-3 text-sm text-muted">Sin registros todavía.</li>}
         {items.map((item) => (
-          <li key={item.id} className="flex items-center justify-between py-2.5">
-            <span className={item.active ? "text-sm text-foreground" : "text-sm text-muted line-through"}>
-              {item.name}
-            </span>
-            {item.active ? (
-              <ConfirmActionButton
-                label="Desactivar"
-                confirmTitle={`Desactivar ${title.toLowerCase()}`}
-                confirmDescription={`¿Desactivar "${item.name}"? Dejará de estar disponible para elegir en jugadores nuevos. No se borra: se puede reactivar después.`}
-                confirmLabel="Desactivar"
-                action={() => toggleAction(item.id, false)}
-              />
-            ) : (
-              <form action={toggleAction.bind(null, item.id, true)}>
-                <button type="submit" className="btn-secondary">
-                  Activar
-                </button>
-              </form>
-            )}
-          </li>
+          <CatalogItemRow key={item.id} item={item} toggleAction={toggleAction} />
         ))}
       </ul>
 
@@ -82,5 +63,39 @@ export function CatalogSection({
         </button>
       </form>
     </div>
+  );
+}
+
+// Fila propia (en vez de resolver el toggle inline en el .map de arriba)
+// para que cada ítem tenga su propio useTransition -- si no, un solo
+// isPending a nivel de CatalogSection deshabilitaría TODOS los switches de
+// la lista mientras cualquiera de ellos está en vuelo.
+function CatalogItemRow({
+  item,
+  toggleAction,
+}: {
+  item: CatalogItem;
+  toggleAction: (id: string, active: boolean) => Promise<void>;
+}) {
+  const [isPending, startTransition] = useTransition();
+
+  function handleChange(checked: boolean) {
+    startTransition(async () => {
+      await toggleAction(item.id, checked);
+    });
+  }
+
+  return (
+    <li className="flex items-center justify-between py-2.5">
+      <span className={item.active ? "text-sm text-foreground" : "text-sm text-muted line-through"}>
+        {item.name}
+      </span>
+      <Switch
+        checked={item.active}
+        onCheckedChange={handleChange}
+        disabled={isPending}
+        aria-label={item.active ? `Desactivar ${item.name}` : `Activar ${item.name}`}
+      />
+    </li>
   );
 }

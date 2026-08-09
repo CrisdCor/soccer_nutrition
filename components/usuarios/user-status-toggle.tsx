@@ -1,34 +1,32 @@
 "use client";
 
-import { ConfirmActionButton } from "@/components/ui/confirm-action-button";
+import { useTransition } from "react";
+import { Switch } from "@/components/ui/switch";
 import { setUserStatus } from "@/lib/usuarios/actions";
 
 // Client Component a propósito: mismo motivo que PlayerStatusToggle -- el
-// closure `() => setUserStatus(...)` que se le pasa a ConfirmActionButton
-// (Client Component) no puede crearse en servidor sin marcar "use server".
+// closure que arma no puede crearse en un Server Component sin "use server".
+// Sin modal de confirmación, mismo criterio que el resto de los switches.
 
 export function UserStatusToggle({ userId, userName, status }: {
   userId: string;
   userName: string;
   status: "active" | "inactive";
 }) {
-  if (status === "active") {
-    return (
-      <ConfirmActionButton
-        label="Inactivar"
-        confirmTitle="Inactivar usuario"
-        confirmDescription={`¿Inactivar a ${userName}? Se le bloqueará el acceso de inmediato. No se borra su cuenta: se puede reactivar después.`}
-        confirmLabel="Inactivar"
-        action={() => setUserStatus(userId, "inactive")}
-      />
-    );
+  const [isPending, startTransition] = useTransition();
+
+  function handleChange(checked: boolean) {
+    startTransition(async () => {
+      await setUserStatus(userId, checked ? "active" : "inactive");
+    });
   }
 
   return (
-    <form action={setUserStatus.bind(null, userId, "active")}>
-      <button type="submit" className="btn-secondary">
-        Activar
-      </button>
-    </form>
+    <Switch
+      checked={status === "active"}
+      onCheckedChange={handleChange}
+      disabled={isPending}
+      aria-label={status === "active" ? `Inactivar a ${userName}` : `Activar a ${userName}`}
+    />
   );
 }

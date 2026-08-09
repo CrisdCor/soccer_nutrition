@@ -66,7 +66,7 @@ export function PlayerNutritionPlanTab({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <select
-          className="w-auto rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand-red"
+          className="select w-auto"
           value={assessment.id}
           onChange={(event) => setSelectedId(event.target.value)}
         >

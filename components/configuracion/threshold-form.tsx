@@ -41,7 +41,7 @@ export function ThresholdForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 sm:grid-cols-4" noValidate>
       <Field label="Métrica" error={errors.metric?.message}>
-        <select className="input" {...register("metric")}>
+        <select className="select" {...register("metric")}>
           <option value="skinfold_sum">Suma 6 Pliegues</option>
           <option value="aks_index">AKS</option>
         </select>

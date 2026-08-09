@@ -57,7 +57,7 @@ export function UserForm({
       </Field>
 
       <Field label="Rol" error={errors.role?.message}>
-        <select className="input" {...register("role")}>
+        <select className="select" {...register("role")}>
           <option value="nutricionista">Nutricionista</option>
           <option value="admin">Admin</option>
         </select>

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PlayerActionsMenu } from "@/components/jugadores/player-actions-menu";
 import { PlayerAssessmentsTabs } from "@/components/jugadores/player-assessments-tabs";
 import { PlayerPhotoUploader } from "@/components/jugadores/player-photo-uploader";
+import { PlayerStatusToggle } from "@/components/jugadores/player-status-toggle";
 import { computeDisplayAge } from "@/lib/calculations";
 import { getCurrentThresholds, listDietTypes, listFoodGroups } from "@/lib/configuracion/queries";
 import { formatIndicator, formatPercentage } from "@/lib/format";
@@ -65,7 +66,10 @@ export default async function PlayerDetailPage({
                 )}
               </div>
 
-              <PlayerActionsMenu playerId={player.id} playerName={player.full_name} status={player.status} />
+              <div className="flex items-center gap-3">
+                <PlayerStatusToggle playerId={player.id} playerName={player.full_name} status={player.status} />
+                <PlayerActionsMenu playerId={player.id} />
+              </div>
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
