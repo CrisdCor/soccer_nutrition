@@ -160,10 +160,14 @@ exclusivamente por `lib/supabase/admin.ts` (service_role) en servidor:
 es el componente compartido para todo selector que solo cambia qué se
 MUESTRA en pantalla — filtros de `/jugadores`, de `/dashboard` y de las 5
 visualizaciones del dashboard, selector de valoración del tab "Plan
-Nutricional". Look de "chip" (referencia: el selector "All environments" de
-Vercel): píldora blanca de ancho automático cerrada, fondo oscuro + texto
-blanco abierta, menú flotante con ✓ en la opción elegida (nunca relleno de
-color) y hover gris claro.
+Nutricional". Look de "chip" (referencia: la barra de filtros de Vercel --
+"All Branches", "All Authors", etc: de ahí se toma solo la FORMA del
+contenedor, no sus demás elementos como iconos de calendario o badges de
+color): rectángulo blanco de esquinas moderadamente redondeadas (`rounded-md`,
+el mismo radio que botones y el resto de controles compactos de la app --
+nunca píldora/`rounded-full`) y ancho automático cerrado, fondo oscuro +
+texto blanco abierto, menú flotante con ✓ en la opción elegida (nunca
+relleno de color) y hover gris claro.
 
 Deliberadamente **no** reemplaza los `<select>` nativos (clase `.select`)
 de los campos de formulario reales atados a `react-hook-form` (Sexo/Raza/
@@ -277,7 +281,11 @@ existe, "Editar plan" si ya existe.
 `components/dashboard/dashboard-reports.tsx` agrupa las 5 visualizaciones
 basadas en las hojas de reporte del Excel original (Rep. Suma Pliegues, Rep.
 Peso Corp. Mlg, Rep. IAKS, Tabla_Resumen, Resumen por Jugador), debajo de las
-cards KPI existentes (esas no cambiaron). Un segmented control
+cards KPI existentes (esas no cambiaron). La tabla de jugadores que vivía
+debajo de las KPI cards (Jugador/Sexo/Posición/Categoría) se retiró del
+dashboard general: quedó redundante con Tabla_Resumen, una de las 5
+visualizaciones, que ya cumple ese rol de listado tabular — `getDashboardStats()`
+ya no trae más que los `id` necesarios para contar. Un segmented control
 (`components/ui/segmented-control.tsx`, Radix Tabs con estilo de pill en vez
 del subrayado de `components/ui/tabs.tsx`) alterna entre las 5 dentro de un
 contenedor de altura fija (`h-[640px]`) — cambiar de vista nunca hace crecer
@@ -294,10 +302,11 @@ la página; cada vista maneja su propio scroll vertical interno.
   consistente entre jugadores, el filtro puede traer menos jugadores de los
   esperados para esa etiqueta. Por defecto siempre es la valoración más
   reciente de cada jugador.
-- Gráficos de barras horizontales (`report-bar-chart.tsx`, una fila por
-  jugador) en vez de columnas verticales: con un plantel grande, crecer
-  hacia abajo (scroll propio del gráfico) es más legible que apretar
-  decenas de nombres rotados en un eje X. Líneas de referencia verticales
+- Gráficos de columnas verticales (`report-bar-chart.tsx`, eje X = jugador,
+  eje Y = valor): con un plantel grande, el ancho total puede superar el
+  contenedor, así que el propio gráfico scrollea horizontal (`overflow-x-auto`
+  + un `minWidth` calculado por cantidad de columnas) en vez de apretar
+  decenas de nombres en un ancho fijo. Líneas de referencia horizontales
   cuando hay umbral configurado (`reference_thresholds`, nunca hardcodeado).
 - Colores en tabla: `RangeBadge` marca "Fuera de rango" en rojo (badge, no
   relleno de fila) solo cuando el valor cae fuera del umbral; dentro de
@@ -316,7 +325,7 @@ la página; cada vista maneja su propio scroll vertical interno.
   indicador más directamente ligado a este análisis; cambiarlo a Peso o
   Suma de Pliegues es una línea. Sin Top N (no hay nada que rankear con un
   solo jugador). La evolución es el único gráfico de LÍNEA de las 5
-  visualizaciones (el resto son barras): tiene sentido acá porque el eje X
+  visualizaciones (el resto son columnas): tiene sentido acá porque el eje X
   es tiempo y lo que importa es la tendencia, no comparar valores entre sí
   — con las mismas líneas de referencia horizontales del umbral AKS que el
   resto de las vistas, y sin conectar puntos a través de una valoración sin

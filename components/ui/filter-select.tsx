@@ -3,8 +3,14 @@
 import * as SelectPrimitive from "@radix-ui/react-select";
 
 /**
- * Selector de filtro estilo "chip" (referencia: el selector "All
- * environments" de Vercel) -- deliberadamente distinto de la clase .select
+ * Selector de filtro estilo "chip" (referencia: la barra de filtros de
+ * Vercel -- "All Branches", "All Authors", etc: de ahí se toma únicamente
+ * la FORMA del contenedor -- rectángulo con esquinas moderadamente
+ * redondeadas, borde gris sutil, fondo blanco, ancho automático -- no sus
+ * demás elementos como iconos de calendario o badges de color, que no
+ * aplican acá). rounded-md, el mismo radio que .btn-primary/.btn-secondary
+ * y el resto de controles compactos de la app -- no rounded-full/píldora.
+ * Deliberadamente distinto de la clase .select
  * (native <select>, usada en campos de formulario reales con
  * react-hook-form: Sexo/Raza/Posición/Categoría de jugador, Rol de
  * usuario, Métrica de umbral, ajuste calórico del plan). Ahí un <select>
@@ -37,7 +43,7 @@ export function FilterSelect({
     <SelectPrimitive.Root value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectPrimitive.Trigger
         aria-label={ariaLabel}
-        className="inline-flex appearance-none items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-surface px-3.5 py-1.5 text-sm text-foreground outline-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue data-[state=open]:border-foreground data-[state=open]:bg-foreground data-[state=open]:text-white data-[disabled]:cursor-not-allowed data-[disabled]:opacity-60"
+        className="inline-flex appearance-none items-center gap-1.5 whitespace-nowrap rounded-md border border-border bg-surface px-3.5 py-1.5 text-sm text-foreground outline-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue data-[state=open]:border-foreground data-[state=open]:bg-foreground data-[state=open]:text-white data-[disabled]:cursor-not-allowed data-[disabled]:opacity-60"
       >
         <SelectPrimitive.Value placeholder={placeholder} />
         <SelectPrimitive.Icon className="shrink-0 transition-transform data-[state=open]:rotate-180">

@@ -77,7 +77,7 @@ export function BodyWeightReport({
         <div className="flex items-center gap-3">
           <TopNControl direction={topNDirection} onDirectionChange={setTopNDirection} n={topN} onNChange={setTopN} />
           <button type="button" className="btn-secondary" onClick={() => setViewMode(viewMode === "bars" ? "table" : "bars")}>
-            {viewMode === "bars" ? "Ver tabla" : "Ver barras"}
+            {viewMode === "bars" ? "Ver tabla" : "Ver columnas"}
           </button>
         </div>
       </div>

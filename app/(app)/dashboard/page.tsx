@@ -37,36 +37,6 @@ export default async function DashboardPage({
         <StatCard label="AKS fuera de umbral" value={String(stats.outOfThresholdCount)} />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs text-muted">
-              <th className="px-4 py-3 font-medium">Jugador</th>
-              <th className="px-4 py-3 font-medium">Sexo</th>
-              <th className="px-4 py-3 font-medium">Posición</th>
-              <th className="px-4 py-3 font-medium">Categoría</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stats.players.map((player) => (
-              <tr key={player.id} className="border-b border-border last:border-0">
-                <td className="px-4 py-3 font-medium text-foreground">{player.full_name}</td>
-                <td className="px-4 py-3 text-muted">{player.sex}</td>
-                <td className="px-4 py-3 text-muted">{player.position?.name ?? "—"}</td>
-                <td className="px-4 py-3 text-muted">{player.category?.name ?? "—"}</td>
-              </tr>
-            ))}
-            {stats.players.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted">
-                  No hay jugadores activos con estos filtros.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
       <div>
         <h3 className="text-base font-semibold text-foreground">Visualizaciones</h3>
         <p className="text-sm text-muted">Basadas en los reportes del Excel original.</p>

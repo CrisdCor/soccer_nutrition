@@ -8,10 +8,11 @@ export type DashboardFilters = {
 export async function getDashboardStats(filters: DashboardFilters) {
   const supabase = await createClient();
 
-  let playersQuery = supabase
-    .from("players")
-    .select("id, full_name, sex, category:categories(name), position:positions(name)")
-    .eq("status", "active");
+  // Solo id: full_name/sex/category/position alimentaban la tabla de
+  // jugadores que vivía debajo de las KPI cards, retirada del dashboard
+  // general por quedar redundante con Tabla_Resumen (una de las 5
+  // visualizaciones, que ya cumple ese rol de listado tabular).
+  let playersQuery = supabase.from("players").select("id").eq("status", "active");
 
   if (filters.categoryId) {
     playersQuery = playersQuery.eq("category_id", filters.categoryId);
@@ -66,7 +67,6 @@ export async function getDashboardStats(filters: DashboardFilters) {
   }
 
   return {
-    players: players ?? [],
     playersCount: players?.length ?? 0,
     assessmentsCount,
     outOfThresholdCount,
