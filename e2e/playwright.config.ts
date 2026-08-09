@@ -40,5 +40,19 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    // Responsive mobile completo (ver README): "iPhone 13 Mini" trae
+    // exactamente el viewport 375×812 pedido (tamaño iPhone estándar),
+    // más isMobile/hasTouch/userAgent realistas -- no un simple resize del
+    // viewport de escritorio. browserName se fuerza a "chromium" (el
+    // preset de iPhone por defecto pide WebKit, no instalado en este
+    // entorno -- solo Chromium lo está; instalar un browser nuevo no es
+    // algo para hacer sin pedirlo) -- se pierde fidelidad real de Safari,
+    // pero el viewport/touch/user-agent siguen siendo los de un iPhone.
+    // No corre por defecto junto al resto (los specs existentes no fueron
+    // pensados para mobile); se invoca a propósito con `--project=mobile`.
+    {
+      name: "mobile",
+      use: { ...devices["iPhone 13 Mini"], browserName: "chromium" },
+    },
   ],
 });

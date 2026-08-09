@@ -75,6 +75,23 @@ menú "•••" o el encabezado del perfil), corre `npm run test:e2e` y revisa
 reporte HTML (`playwright-report/index.html`, con capturas automáticas de
 lo que falló) en vez de asumir que se ve bien.
 
+**Mobile:** el proyecto `mobile` (viewport 375×812 -- "iPhone 13 Mini",
+tamaño iPhone estándar, con `isMobile`/`hasTouch`/user-agent reales, no un
+simple resize del viewport de escritorio) no corre por defecto junto al
+resto -- se invoca a propósito:
+```bash
+npx playwright test --config=e2e/playwright.config.ts --project=mobile
+```
+El preset de iPhone pide WebKit por defecto; se fuerza `browserName:
+"chromium"` en la config porque WebKit no está instalado en muchos entornos
+de desarrollo de este equipo (evita tener que instalar un browser aparte
+solo para esto) -- se pierde fidelidad real de Safari, pero el viewport/
+touch/user-agent siguen siendo los de un iPhone. `e2e/mobile-screens.spec.ts`
+recorre las pantallas clave del responsive mobile (login, dashboard,
+jugadores, perfil, formulario de valoración) y guarda una captura de cada
+una en `e2e/screenshots/` (gitignored -- nunca en `playwright-report/`, que
+el reporter HTML limpia al final de cada corrida).
+
 ## Estructura
 
 ```
