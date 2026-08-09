@@ -90,6 +90,7 @@ export function NutritionPlanSheet({
             key={assessment.id}
             assessmentId={assessment.id}
             playerId={playerId}
+            weightKg={assessment.weight_kg}
             dietTypes={dietTypes}
             foodGroups={foodGroups}
             mealTypes={mealTypes}

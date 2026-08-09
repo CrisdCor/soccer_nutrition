@@ -12,7 +12,7 @@ export const nutritionPlanPayloadSchema = z.object({
   diet_type_ids: z.array(z.string()),
   diet_type_observation: z.string(),
   energy_requirement_kcal: z.string(),
-  caloric_adjustment_direction: z.enum(["deficit", "superavit"]),
+  caloric_adjustment_direction: z.enum(["deficit", "superavit", "mantenimiento"]),
   caloric_adjustment_magnitude_kcal: z.string(),
   energy_distribution_kcal: z.string(),
   protein_g: z.string(),

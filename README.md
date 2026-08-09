@@ -287,11 +287,26 @@ existe, "Editar plan" si ya existe.
 - `diet_types`/`food_groups` son catálogos editables por cualquier rol (a
   diferencia de `positions`/`categories`) desde `/configuracion`, mismo patrón
   visual (`CatalogSection`) que Posiciones/Categorías.
-- `meal_types` es catálogo cerrado (Desayuno, Post entreno, Almuerzo, Algo,
-  Cena — orden fijo por `sort_order`), sin CRUD.
+- `meal_types` es catálogo cerrado (orden fijo por `sort_order`, hoy
+  Desayuno/Post entreno/Almuerzo/Algo/Cena/Merienda), sin CRUD -- se agregan
+  filas directo en la tabla cuando hace falta (ej. "Merienda" se sumó así).
+  La UI (tabla de porciones, ejemplo de menú) recorre `mealTypes` como prop
+  siempre vía `.map()`, sin ningún nombre de comida hardcodeado -- una fila
+  nueva aparece sola, sin tocar código.
+- g/kg de cada macronutriente (Proteína/Grasa/Carbohidratos, no Energía) es
+  de solo lectura: se deriva de los gramos ingresados ÷ el peso de la
+  valoración (`computePerKg()` en nutrition-plan-form.tsx), en vivo mientras
+  se escribe y de nuevo al guardar (por si el estado quedó desactualizado).
+  Sin peso disponible (no debería pasar -- `weight_kg` es NOT NULL en
+  `assessments`) o sin gramos escritos: muestra "—", nunca 0 ni `NaN`.
+- El ajuste calórico tiene tres direcciones: Déficit/Superávit (con
+  magnitud) y Mantenimiento (ni uno ni otro -- la magnitud queda
+  deshabilitada y `caloric_adjustment_kcal` se guarda como `0`).
 - Fuera de alcance a propósito: exportar a PDF, fórmulas automáticas de
-  distribución de macros, carga de fotos en el ejemplo de menú, clasificación
-  de IMC (pendiente definir tabla de referencia OMS).
+  distribución de macros a partir de kcal/porcentajes (los gramos se siguen
+  escribiendo a mano; solo el g/kg resultante es automático), carga de fotos
+  en el ejemplo de menú, clasificación de IMC (pendiente definir tabla de
+  referencia OMS).
 
 ## Visualizaciones del dashboard
 

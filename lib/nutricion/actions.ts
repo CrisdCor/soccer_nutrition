@@ -19,13 +19,17 @@ export async function saveNutritionPlan(
   const parsed = nutritionPlanPayloadSchema.parse(values);
   const { supabase, profile } = await requireProfile();
 
+  // "Mantenimiento" ignora la magnitud (queda deshabilitada en el
+  // formulario) y siempre guarda 0 -- ni déficit ni superávit.
   const magnitude = parseOptionalNumber(parsed.caloric_adjustment_magnitude_kcal);
   const caloricAdjustmentKcal =
-    magnitude == null
-      ? null
-      : parsed.caloric_adjustment_direction === "deficit"
-        ? -Math.abs(magnitude)
-        : Math.abs(magnitude);
+    parsed.caloric_adjustment_direction === "mantenimiento"
+      ? 0
+      : magnitude == null
+        ? null
+        : parsed.caloric_adjustment_direction === "deficit"
+          ? -Math.abs(magnitude)
+          : Math.abs(magnitude);
 
   const planFields = {
     nutritional_diagnosis: parsed.nutritional_diagnosis.trim() || null,

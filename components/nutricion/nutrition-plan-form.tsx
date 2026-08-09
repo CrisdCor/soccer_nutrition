@@ -13,7 +13,7 @@ type FormState = {
   diet_type_ids: string[];
   diet_type_observation: string;
   energy_requirement_kcal: string;
-  caloric_adjustment_direction: "deficit" | "superavit";
+  caloric_adjustment_direction: "deficit" | "superavit" | "mantenimiento";
   caloric_adjustment_magnitude_kcal: string;
   energy_distribution_kcal: string;
   protein_g: string;
@@ -33,6 +33,23 @@ function portionKey(foodGroupId: string, mealTypeId: number): string {
 
 function numToStr(value: number | null): string {
   return value != null ? String(value) : "";
+}
+
+/**
+ * g/kg ya no es un input libre: se deriva de los gramos ingresados y el
+ * peso de la valoración a la que pertenece el plan. `null` cubre tanto
+ * "todavía no escribió gramos" como "la valoración no tiene peso" (no
+ * debería pasar -- weight_kg es NOT NULL en la tabla -- pero se maneja
+ * igual por robustez) -- ambos casos se muestran como "—", nunca 0 ni NaN.
+ */
+function computePerKg(gramsStr: string, weightKg: number | null | undefined): number | null {
+  const grams = Number(gramsStr);
+  if (!gramsStr.trim() || !Number.isFinite(grams) || weightKg == null || weightKg <= 0) return null;
+  return Math.round((grams / weightKg) * 100) / 100;
+}
+
+function formatPerKg(value: number | null): string {
+  return value != null ? value.toFixed(2) : "—";
 }
 
 function buildInitialState(
@@ -55,13 +72,19 @@ function buildInitialState(
   }
 
   const adjustment = existingPlan?.caloric_adjustment_kcal ?? null;
+  // adjustment === 0 se interpreta como "Mantenimiento" -- un plan viejo
+  // con magnitud "0" bajo Déficit/Superávit da exactamente el mismo valor
+  // guardado (no hay forma de distinguirlos, y tampoco hay diferencia real
+  // en el resultado: "0 kcal de déficit" es lo mismo que "mantenimiento").
+  const caloricAdjustmentDirection: FormState["caloric_adjustment_direction"] =
+    adjustment == null ? "deficit" : adjustment === 0 ? "mantenimiento" : adjustment > 0 ? "superavit" : "deficit";
 
   return {
     nutritional_diagnosis: existingPlan?.nutritional_diagnosis ?? suggestedDiagnosis,
     diet_type_ids: existingPlan?.dietTypeIds ?? [],
     diet_type_observation: existingPlan?.diet_type_observation ?? "",
     energy_requirement_kcal: numToStr(existingPlan?.energy_requirement_kcal ?? null),
-    caloric_adjustment_direction: adjustment != null && adjustment > 0 ? "superavit" : "deficit",
+    caloric_adjustment_direction: caloricAdjustmentDirection,
     caloric_adjustment_magnitude_kcal: adjustment != null ? String(Math.abs(adjustment)) : "",
     energy_distribution_kcal: numToStr(existingPlan?.energy_distribution_kcal ?? null),
     protein_g: numToStr(existingPlan?.protein_g ?? null),
@@ -79,6 +102,7 @@ function buildInitialState(
 export function NutritionPlanForm({
   assessmentId,
   playerId,
+  weightKg,
   dietTypes,
   foodGroups,
   mealTypes,
@@ -89,6 +113,10 @@ export function NutritionPlanForm({
 }: {
   assessmentId: string;
   playerId: string;
+  /** Peso de la valoración a la que pertenece este plan -- deriva los g/kg
+   * de cada macronutriente. `null` si por algún motivo no está disponible
+   * (no debería pasar; weight_kg es NOT NULL en assessments). */
+  weightKg: number | null;
   dietTypes: CatalogOption[];
   foodGroups: CatalogOption[];
   mealTypes: MealType[];
@@ -141,7 +169,16 @@ export function NutritionPlanForm({
   async function handleSubmit() {
     setError(null);
     setIsSaving(true);
-    const result = await saveNutritionPlan(assessmentId, playerId, state);
+    // g/kg no se edita a mano: se recalcula acá mismo al guardar, en vez de
+    // confiar en lo que haya quedado en el estado (que podría venir de un
+    // plan existente cargado antes de este cambio, con un peso distinto).
+    const payload: FormState = {
+      ...state,
+      protein_g_per_kg: numToStr(computePerKg(state.protein_g, weightKg)),
+      fat_g_per_kg: numToStr(computePerKg(state.fat_g, weightKg)),
+      carbs_g_per_kg: numToStr(computePerKg(state.carbs_g, weightKg)),
+    };
+    const result = await saveNutritionPlan(assessmentId, playerId, payload);
     setIsSaving(false);
 
     if (result.error) {
@@ -210,11 +247,15 @@ export function NutritionPlanForm({
               className="select"
               value={state.caloric_adjustment_direction}
               onChange={(event) =>
-                update("caloric_adjustment_direction", event.target.value as "deficit" | "superavit")
+                update(
+                  "caloric_adjustment_direction",
+                  event.target.value as FormState["caloric_adjustment_direction"]
+                )
               }
             >
               <option value="deficit">Déficit</option>
               <option value="superavit">Superávit</option>
+              <option value="mantenimiento">Mantenimiento</option>
             </select>
           </Field>
           <Field label="Magnitud del ajuste (kcal)">
@@ -223,8 +264,10 @@ export function NutritionPlanForm({
               step="1"
               min="0"
               inputMode="decimal"
-              className="input"
-              value={state.caloric_adjustment_magnitude_kcal}
+              disabled={state.caloric_adjustment_direction === "mantenimiento"}
+              placeholder={state.caloric_adjustment_direction === "mantenimiento" ? "No aplica" : undefined}
+              className="input disabled:cursor-not-allowed disabled:opacity-60"
+              value={state.caloric_adjustment_direction === "mantenimiento" ? "" : state.caloric_adjustment_magnitude_kcal}
               onChange={(event) => update("caloric_adjustment_magnitude_kcal", event.target.value)}
             />
           </Field>
@@ -247,21 +290,21 @@ export function NutritionPlanForm({
             gramsLabel="Gramos"
             gramsValue={state.protein_g}
             onGramsChange={(v) => update("protein_g", v)}
-            perKg={{ value: state.protein_g_per_kg, onChange: (v) => update("protein_g_per_kg", v) }}
+            perKgDisplay={formatPerKg(computePerKg(state.protein_g, weightKg))}
           />
           <MacroCard
             title="Grasa (g)"
             gramsLabel="Gramos"
             gramsValue={state.fat_g}
             onGramsChange={(v) => update("fat_g", v)}
-            perKg={{ value: state.fat_g_per_kg, onChange: (v) => update("fat_g_per_kg", v) }}
+            perKgDisplay={formatPerKg(computePerKg(state.fat_g, weightKg))}
           />
           <MacroCard
             title="Carbohidratos (g)"
             gramsLabel="Gramos"
             gramsValue={state.carbs_g}
             onGramsChange={(v) => update("carbs_g", v)}
-            perKg={{ value: state.carbs_g_per_kg, onChange: (v) => update("carbs_g_per_kg", v) }}
+            perKgDisplay={formatPerKg(computePerKg(state.carbs_g, weightKg))}
           />
         </div>
 
@@ -301,16 +344,7 @@ export function NutritionPlanForm({
                     onChange={(event) => update("protein_g", event.target.value)}
                   />
                 </td>
-                <td className="px-3 py-2">
-                  <input
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    className="input"
-                    value={state.protein_g_per_kg}
-                    onChange={(event) => update("protein_g_per_kg", event.target.value)}
-                  />
-                </td>
+                <td className="data px-3 py-2 text-foreground">{formatPerKg(computePerKg(state.protein_g, weightKg))}</td>
               </tr>
               <tr className="border-b border-border">
                 <td className="px-3 py-2 text-foreground">Grasa (g)</td>
@@ -324,16 +358,7 @@ export function NutritionPlanForm({
                     onChange={(event) => update("fat_g", event.target.value)}
                   />
                 </td>
-                <td className="px-3 py-2">
-                  <input
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    className="input"
-                    value={state.fat_g_per_kg}
-                    onChange={(event) => update("fat_g_per_kg", event.target.value)}
-                  />
-                </td>
+                <td className="data px-3 py-2 text-foreground">{formatPerKg(computePerKg(state.fat_g, weightKg))}</td>
               </tr>
               <tr>
                 <td className="px-3 py-2 text-foreground">Carbohidratos (g)</td>
@@ -347,22 +372,13 @@ export function NutritionPlanForm({
                     onChange={(event) => update("carbs_g", event.target.value)}
                   />
                 </td>
-                <td className="px-3 py-2">
-                  <input
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    className="input"
-                    value={state.carbs_g_per_kg}
-                    onChange={(event) => update("carbs_g_per_kg", event.target.value)}
-                  />
-                </td>
+                <td className="data px-3 py-2 text-foreground">{formatPerKg(computePerKg(state.carbs_g, weightKg))}</td>
               </tr>
             </tbody>
           </table>
         </div>
         <p className="mt-2 text-xs text-muted">
-          Sin fórmula automática todavía: los valores son independientes entre sí.
+          g / kg se calcula automáticamente (gramos ÷ peso de esta valoración) -- no es editable.
         </p>
       </Section>
 
@@ -501,25 +517,26 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 // Reemplazo mobile de una fila de la tabla de macros: gramos/kcal + g/kg
-// (cuando aplica) en 2 columnas -- Energía no tiene g/kg, así que perKg es
-// opcional y esa card cae a 1 columna.
+// (cuando aplica) en 2 columnas -- Energía no tiene g/kg, así que
+// perKgDisplay es opcional y esa card cae a 1 columna. g/kg es de solo
+// lectura (calculado, no editable a mano) -- ver computePerKg().
 function MacroCard({
   title,
   gramsLabel,
   gramsValue,
   onGramsChange,
-  perKg,
+  perKgDisplay,
 }: {
   title: string;
   gramsLabel: string;
   gramsValue: string;
   onGramsChange: (value: string) => void;
-  perKg?: { value: string; onChange: (value: string) => void };
+  perKgDisplay?: string;
 }) {
   return (
     <div className="rounded-lg border border-border p-3">
       <p className="mb-2 text-sm font-medium text-foreground">{title}</p>
-      <div className={`grid gap-3 ${perKg ? "grid-cols-2" : "grid-cols-1"}`}>
+      <div className={`grid gap-3 ${perKgDisplay != null ? "grid-cols-2" : "grid-cols-1"}`}>
         <Field label={gramsLabel}>
           <input
             type="number"
@@ -530,16 +547,9 @@ function MacroCard({
             onChange={(event) => onGramsChange(event.target.value)}
           />
         </Field>
-        {perKg && (
+        {perKgDisplay != null && (
           <Field label="g / kg">
-            <input
-              type="number"
-              step="0.01"
-              inputMode="decimal"
-              className="input"
-              value={perKg.value}
-              onChange={(event) => perKg.onChange(event.target.value)}
-            />
+            <input type="text" readOnly className="input bg-background text-muted" value={perKgDisplay} />
           </Field>
         )}
       </div>
