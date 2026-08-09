@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { Header } from "@/components/layout/header";
 import { Sidebar } from "@/components/layout/sidebar";
 import { signOut } from "@/lib/auth/actions";
@@ -62,8 +63,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         <Sidebar />
         <div className="flex min-h-full flex-1 flex-col">
           <Header />
-          <main className="flex-1 overflow-y-auto p-6">{children}</main>
+          {/* pb-20: espacio para que el BottomNav fijo (solo mobile) no
+              tape el final del contenido; sm:pb-6 vuelve al padding
+              normal una vez que el BottomNav deja de mostrarse. */}
+          <main className="flex-1 overflow-y-auto p-4 pb-20 sm:p-6 sm:pb-6">{children}</main>
         </div>
+        <BottomNav />
       </div>
     </UserProfileProvider>
   );

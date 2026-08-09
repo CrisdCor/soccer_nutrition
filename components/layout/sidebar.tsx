@@ -29,7 +29,7 @@ export function Sidebar() {
   const items = NAV_ITEMS.filter((item) => !item.adminOnly || role === "admin");
 
   return (
-    <aside className="hidden md:flex md:w-60 md:flex-col md:border-r md:border-border md:bg-surface">
+    <aside className="hidden sm:flex sm:w-60 sm:flex-col sm:border-r sm:border-border sm:bg-surface">
       <div className="flex h-16 items-center gap-2 border-b border-border px-5">
         <Image src="/logo.webp" alt="" width={24} height={24} className="shrink-0" aria-hidden />
         <span className="text-xs font-semibold leading-tight tracking-tight text-foreground">
