@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/login-form";
 
 export const metadata: Metadata = {
-  title: "Iniciar sesión | Soccer Nutrition",
+  title: "Iniciar sesión | Nutrición Fuerzas Básicas",
 };
 
 // Única ruta pública de la app (ver PUBLIC_ROUTES en middleware.ts).
@@ -23,7 +23,7 @@ export default function LoginPage() {
             priority
           />
           <p className="font-mono text-sm font-semibold tracking-tight text-foreground">
-            SOCCER_NUTRITION
+            NUTRICIÓN_FUERZAS_BÁSICAS
           </p>
           <p className="mt-1 text-sm text-muted">Independiente Medellín</p>
         </div>

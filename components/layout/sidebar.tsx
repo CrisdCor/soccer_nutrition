@@ -31,9 +31,9 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex md:w-60 md:flex-col md:border-r md:border-border md:bg-surface">
       <div className="flex h-16 items-center gap-2 border-b border-border px-5">
-        <Image src="/logo.webp" alt="" width={24} height={24} aria-hidden />
-        <span className="text-sm font-semibold tracking-tight text-foreground">
-          Soccer Nutrition
+        <Image src="/logo.webp" alt="" width={24} height={24} className="shrink-0" aria-hidden />
+        <span className="text-xs font-semibold leading-tight tracking-tight text-foreground">
+          Nutrición Fuerzas Básicas
         </span>
       </div>
 

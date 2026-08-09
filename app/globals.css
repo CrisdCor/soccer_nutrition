@@ -96,14 +96,30 @@ input:-webkit-autofill:focus {
   transition: background-color 9999s ease-in-out 0s;
 }
 
-.btn-primary {
+/*
+ * Primary y Secondary comparten la misma altura (2.25rem) pese a tener
+ * padding/font-size/border distintos entre sí -- sin un height explícito,
+ * el border de 1px de Secondary (que Primary no tiene) y su font-size más
+ * chico lo dejaban ~5px más bajo, notorio cuando quedan uno junto al otro
+ * (ej. "Nueva valoración" + "Crear plan"). display:flex centra el texto
+ * verticalmente dentro de esa altura fija.
+ */
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.25rem;
   border-radius: 0.375rem;
-  background: var(--color-brand-red);
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
   font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-primary {
+  background: var(--color-brand-red);
+  padding: 0 1rem;
+  font-size: 0.875rem;
   color: white;
-  transition: background-color 0.15s ease;
 }
 .btn-primary:hover {
   background: var(--color-brand-red-hover);
@@ -113,13 +129,10 @@ input:-webkit-autofill:focus {
 }
 
 .btn-secondary {
-  border-radius: 0.375rem;
   border: 1px solid var(--color-border);
-  padding: 0.375rem 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 500;
+  padding: 0 0.875rem;
+  font-size: 0.8125rem;
   color: var(--color-muted);
-  transition: background-color 0.15s ease, color 0.15s ease;
 }
 .btn-secondary:hover {
   background: var(--color-background);

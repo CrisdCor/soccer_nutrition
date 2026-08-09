@@ -78,7 +78,7 @@ export function NutritionPlanSheet({
 
   return (
     <Sheet.Root open={open} onOpenChange={onOpenChange}>
-      <Sheet.Content>
+      <Sheet.Content size="xl">
         <Sheet.Header>
           <Sheet.Title>{existingPlan ? "Editar plan de alimentación" : "Nuevo plan de alimentación"}</Sheet.Title>
           <Sheet.Description>

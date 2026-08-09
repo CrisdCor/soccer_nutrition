@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Soccer Nutrition | Independiente Medellín",
+  title: "Nutrición Fuerzas Básicas | Independiente Medellín",
   description: "Valoraciones antropométricas de jugadores.",
 };
 
