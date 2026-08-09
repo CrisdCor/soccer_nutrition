@@ -1,6 +1,9 @@
 import { DashboardFilterBar } from "@/components/dashboard/filter-bar";
-import { listCategories } from "@/lib/catalogos/queries";
+import { DashboardReports } from "@/components/dashboard/dashboard-reports";
+import { listCategories, listPositions } from "@/lib/catalogos/queries";
+import { getCurrentThresholds } from "@/lib/configuracion/queries";
 import { getDashboardStats } from "@/lib/dashboard/queries";
+import { listReportAssessments, listReportPlayers } from "@/lib/dashboard/report-queries";
 
 export default async function DashboardPage({
   searchParams,
@@ -10,9 +13,13 @@ export default async function DashboardPage({
   const { category, sex } = await searchParams;
   const sexFilter = sex === "Hombre" || sex === "Mujer" ? sex : undefined;
 
-  const [stats, categories] = await Promise.all([
+  const [stats, categories, positions, thresholds, reportPlayers, reportAssessments] = await Promise.all([
     getDashboardStats({ categoryId: category, sex: sexFilter }),
     listCategories({ activeOnly: true }),
+    listPositions({ activeOnly: true }),
+    getCurrentThresholds(),
+    listReportPlayers(),
+    listReportAssessments(),
   ]);
 
   return (
@@ -59,6 +66,19 @@ export default async function DashboardPage({
           </tbody>
         </table>
       </div>
+
+      <div>
+        <h3 className="text-base font-semibold text-foreground">Visualizaciones</h3>
+        <p className="text-sm text-muted">Basadas en los reportes del Excel original.</p>
+      </div>
+
+      <DashboardReports
+        players={reportPlayers}
+        assessments={reportAssessments}
+        categories={categories}
+        positions={positions}
+        thresholds={thresholds}
+      />
     </div>
   );
 }

@@ -1,0 +1,183 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { Bar, BarChart, CartesianGrid, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { ALL, LATEST } from "@/lib/dashboard/report-helpers";
+import type { ReportAssessment, ReportPlayer } from "@/lib/dashboard/report-queries";
+import { formatIndicator } from "@/lib/format";
+
+type CatalogOption = { id: string; name: string };
+
+const RED = "#c8102e";
+const BORDER = "#e4e4e7";
+const MUTED = "#71717a";
+
+const SKINFOLD_AXES: { key: keyof ReportAssessment; label: string }[] = [
+  { key: "skinfold_triceps", label: "Tríceps" },
+  { key: "skinfold_subscapular", label: "Subescapular" },
+  { key: "skinfold_supraspinal", label: "Supraespinal" },
+  { key: "skinfold_abdominal", label: "Abdominal" },
+  { key: "skinfold_thigh", label: "Muslo" },
+  { key: "skinfold_calf", label: "Pierna" },
+  { key: "skinfold_biceps", label: "Bíceps" },
+  { key: "skinfold_iliac_crest", label: "Cresta ilíaca" },
+];
+
+/**
+ * Único bloque con filtros obligatorios (Jugador, Categoría, Valoración):
+ * a diferencia de las otras 4 visualizaciones, no tiene sentido una "vista
+ * general" mezclando jugadores acá. Sin tabla ni Top N (no hay nada que
+ * rankear con un solo jugador seleccionado) -- solo el radar de 8 pliegues
+ * de la valoración elegida y la evolución de AKS a través de todas sus
+ * valoraciones. Métrica de evolución: Índice AKS, por ser el indicador más
+ * directamente ligado a este análisis de composición corporal -- si se
+ * prefiere Peso o Suma de Pliegues, es un cambio de una línea.
+ */
+export function PlayerSummaryReport({
+  players,
+  assessmentsByPlayer,
+  categories,
+}: {
+  players: ReportPlayer[];
+  assessmentsByPlayer: Map<string, ReportAssessment[]>;
+  categories: CatalogOption[];
+}) {
+  const [categoryId, setCategoryId] = useState(ALL);
+  const [playerId, setPlayerId] = useState("");
+  const [valoracionLabel, setValoracionLabel] = useState(LATEST);
+
+  const filteredPlayers = useMemo(
+    () => players.filter((player) => categoryId === ALL || player.category?.id === categoryId),
+    [players, categoryId]
+  );
+
+  // Si cambia la categoría y el jugador elegido ya no está en la lista (o
+  // todavía no se eligió ninguno), se deriva el primero disponible acá
+  // mismo en vez de sincronizar el estado con un efecto -- nunca queda
+  // vacío mientras haya jugadores para elegir, y evita el cascading-render
+  // de llamar setState dentro de un useEffect.
+  const effectivePlayerId = filteredPlayers.some((p) => p.id === playerId)
+    ? playerId
+    : (filteredPlayers[0]?.id ?? "");
+
+  const player = filteredPlayers.find((p) => p.id === effectivePlayerId) ?? null;
+  const history = player ? assessmentsByPlayer.get(player.id) ?? [] : [];
+
+  // Mismo criterio: si la etiqueta elegida no existe en el historial del
+  // jugador actual (típicamente porque se acaba de cambiar de jugador),
+  // cae en "más reciente" sin necesitar un efecto que la resetee.
+  const effectiveValoracionLabel =
+    valoracionLabel === LATEST || history.some((a) => a.label === valoracionLabel) ? valoracionLabel : LATEST;
+
+  const assessment =
+    effectiveValoracionLabel === LATEST
+      ? history[history.length - 1]
+      : [...history].reverse().find((a) => a.label === effectiveValoracionLabel);
+
+  const missingAxes = assessment ? SKINFOLD_AXES.filter((axis) => assessment[axis.key] == null) : [];
+
+  const radarData = SKINFOLD_AXES.map((axis) => ({
+    axis: axis.label,
+    value: assessment ? (assessment[axis.key] as number | null) ?? 0 : 0,
+  }));
+
+  const evolutionData = history.map((a) => ({
+    name: `${a.assessment_date}${a.label ? ` · ${a.label}` : ""}`,
+    aks_index: a.aks_index,
+  }));
+
+  return (
+    <div className="flex h-full flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <select className="select w-auto" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+          <option value={ALL}>Todas las categorías</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+
+        <select className="select w-auto" value={effectivePlayerId} onChange={(e) => setPlayerId(e.target.value)}>
+          {filteredPlayers.length === 0 && <option value="">Sin jugadores</option>}
+          {filteredPlayers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.full_name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="select w-auto"
+          value={effectiveValoracionLabel}
+          onChange={(e) => setValoracionLabel(e.target.value)}
+          disabled={history.length === 0}
+        >
+          <option value={LATEST}>Valoración más reciente</option>
+          {[...history].reverse().map((a) => (
+            <option key={a.id} value={a.label}>
+              {a.label} · {a.assessment_date}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {!player || !assessment ? (
+          <div className="flex h-40 items-center justify-center rounded-lg border border-dashed border-border-strong text-sm text-muted">
+            {player ? "Este jugador todavía no tiene valoraciones registradas." : "No hay jugadores para mostrar."}
+          </div>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="rounded-lg border border-border p-3">
+              <h4 className="px-1 text-sm font-semibold text-foreground">
+                Pliegues cutáneos -- {assessment.label} · {assessment.assessment_date}
+              </h4>
+              {missingAxes.length > 0 && (
+                <p className="px-1 pt-1 text-xs text-muted">
+                  Dato insuficiente: {missingAxes.map((a) => a.label).join(", ")} (graficado como 0).
+                </p>
+              )}
+              <div style={{ height: 320 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={radarData} outerRadius="75%">
+                    <PolarGrid stroke={BORDER} />
+                    <PolarAngleAxis dataKey="axis" tick={{ fontSize: 11, fill: MUTED }} />
+                    <PolarRadiusAxis tick={{ fontSize: 10, fill: MUTED }} />
+                    <Radar dataKey="value" stroke={RED} fill={RED} fillOpacity={0.25} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 6, borderColor: BORDER }} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border p-3">
+              <h4 className="px-1 text-sm font-semibold text-foreground">Evolución -- Índice AKS</h4>
+              <div style={{ height: 320 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={evolutionData} margin={{ top: 8, right: 16, left: 0, bottom: 56 }}>
+                    <CartesianGrid stroke={BORDER} vertical={false} />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 10, fill: MUTED }}
+                      angle={-40}
+                      textAnchor="end"
+                      interval={0}
+                      height={70}
+                    />
+                    <YAxis tick={{ fontSize: 11, fill: MUTED }} />
+                    <Tooltip
+                      contentStyle={{ fontSize: 12, borderRadius: 6, borderColor: BORDER }}
+                      formatter={(value) => formatIndicator(typeof value === "number" ? value : null, 2)}
+                    />
+                    <Bar dataKey="aks_index" name="Índice AKS" fill={RED} radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

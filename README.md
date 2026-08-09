@@ -252,6 +252,54 @@ existe, "Editar plan" si ya existe.
   distribución de macros, carga de fotos en el ejemplo de menú, clasificación
   de IMC (pendiente definir tabla de referencia OMS).
 
+## Visualizaciones del dashboard
+
+`components/dashboard/dashboard-reports.tsx` agrupa las 5 visualizaciones
+basadas en las hojas de reporte del Excel original (Rep. Suma Pliegues, Rep.
+Peso Corp. Mlg, Rep. IAKS, Tabla_Resumen, Resumen por Jugador), debajo de las
+cards KPI existentes (esas no cambiaron). Un segmented control
+(`components/ui/segmented-control.tsx`, Radix Tabs con estilo de pill en vez
+del subrayado de `components/ui/tabs.tsx`) alterna entre las 5 dentro de un
+contenedor de altura fija (`h-[640px]`) — cambiar de vista nunca hace crecer
+la página; cada vista maneja su propio scroll vertical interno.
+
+- Una sola carga de datos (`lib/dashboard/report-queries.ts`: jugadores
+  activos + todas sus valoraciones) alimenta las 5 vistas — cada una
+  filtra/ordena/recorta en el cliente (`lib/dashboard/report-helpers.ts`),
+  igual que la búsqueda en vivo de `/jugadores`, en vez de ir al servidor por
+  cada combinación de filtros.
+- Filtro "Valoración": no hay una tabla de "rondas" separada, así que se usa
+  la `label` de la valoración (texto libre por jugador) como identificador
+  de facto de una ronda compartida — si la nutricionista no etiqueta
+  consistente entre jugadores, el filtro puede traer menos jugadores de los
+  esperados para esa etiqueta. Por defecto siempre es la valoración más
+  reciente de cada jugador.
+- Gráficos de barras horizontales (`report-bar-chart.tsx`, una fila por
+  jugador) en vez de columnas verticales: con un plantel grande, crecer
+  hacia abajo (scroll propio del gráfico) es más legible que apretar
+  decenas de nombres rotados en un eje X. Líneas de referencia verticales
+  cuando hay umbral configurado (`reference_thresholds`, nunca hardcodeado).
+- Colores en tabla: `RangeBadge` marca "Fuera de rango" en rojo (badge, no
+  relleno de fila) solo cuando el valor cae fuera del umbral; dentro de
+  rango no se pinta nada — ausencia de color = está bien, mismo principio
+  del Design System que el resto de la app.
+- Top N (mejores/peores, N configurable, 10 por defecto): "mejor" = valor
+  más bajo de la métrica, literal, no un juicio fisiológico — si para AKS
+  el sentido debería ser al revés, es un cambio de una línea en
+  `applyTopN()`. En Tabla_Resumen no hay una métrica fija: el Top N se
+  aplica sobre la columna por la que esté ordenada la tabla en ese momento
+  (encabezados clicables, asc/desc).
+- Resumen por Jugador es la única vista sin "vista general": exige elegir un
+  jugador (se autoselecciona el primero disponible para no arrancar vacía).
+  Radar de 8 pliegues cutáneos de la valoración elegida + barras de
+  evolución de Índice AKS a través de todas sus valoraciones — se eligió AKS
+  por ser el indicador más directamente ligado a este análisis; cambiarlo a
+  Peso o Suma de Pliegues es una línea. Sin Top N (no hay nada que rankear
+  con un solo jugador).
+- Pliegue sin dato en el radar: se grafica como 0 (recharts no soporta
+  "hueco" en un polígono cerrado) pero se lista aparte, explícito, arriba
+  del gráfico ("Dato insuficiente: ...") — nunca 0 silencioso.
+
 ## Cálculos antropométricos
 
 `lib/calculations/` implementa cada fórmula (Suma 6 Pliegues, perímetros
