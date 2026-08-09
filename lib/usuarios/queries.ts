@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Database } from "@/lib/supabase/database.types";
 
 export type UserRow = {
   id: string;
   full_name: string;
-  role: "admin" | "nutricionista";
+  role: Database["public"]["Enums"]["user_role"];
   status: "active" | "inactive";
   created_at: string;
   email: string;

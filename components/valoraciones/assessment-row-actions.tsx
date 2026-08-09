@@ -20,13 +20,16 @@ type Assessment = AssessmentDetailFields & { id: string; assessment_date: string
  *    /valoraciones/[id]).
  *  - "Ver/crear plan nutricional": el mismo panel de formulario de plan que
  *    dispara el botón del encabezado, pero fijado a la valoración de ESTA
- *    fila -- no necesariamente la más reciente.
+ *    fila -- no necesariamente la más reciente. Oculto para `lider`: este
+ *    ítem SIEMPRE abre el panel de formulario/edición (no existe una vista
+ *    de solo lectura por fila -- esa vive en la pestaña "Plan Nutricional").
  *  - "Editar valoración" (solo admin): decisión propia no pedida
  *    explícitamente en el encabargo -- se mantiene porque assessments es
  *    insert-only para nutricionista y update es admin-only a nivel de RLS;
  *    quitar la edición hubiera sido perder una regla de negocio existente.
  *    Gateado en el cliente vía useUserProfile() y reforzado server-side en
- *    updateAssessment().
+ *    updateAssessment(). `lider` tampoco es admin, así que ya queda excluido
+ *    automáticamente por esta misma condición.
  *
  * Cada ítem controla el open/onOpenChange de su propio panel -- un
  * DropdownMenu.Item no puede anidar su propio trigger con estado local.
@@ -67,7 +70,9 @@ export function AssessmentRowActions({
         </DropdownMenu.Trigger>
         <DropdownMenu.Content>
           <DropdownMenu.Item onSelect={() => setDetailOpen(true)}>Ver detalle</DropdownMenu.Item>
-          <DropdownMenu.Item onSelect={() => setPlanOpen(true)}>Ver/crear plan nutricional</DropdownMenu.Item>
+          {role !== "lider" && (
+            <DropdownMenu.Item onSelect={() => setPlanOpen(true)}>Ver/crear plan nutricional</DropdownMenu.Item>
+          )}
           {role === "admin" && (
             <DropdownMenu.Item onSelect={() => setEditOpen(true)}>Editar valoración</DropdownMenu.Item>
           )}
@@ -76,19 +81,21 @@ export function AssessmentRowActions({
 
       <AssessmentDetailSheet assessment={assessment} open={detailOpen} onOpenChange={setDetailOpen} />
 
-      <NutritionPlanSheet
-        playerId={playerId}
-        playerSex={playerSex}
-        playerBirthDate={playerBirthDate}
-        assessment={assessment}
-        existingPlan={existingPlan}
-        thresholds={thresholds}
-        dietTypes={dietTypes}
-        foodGroups={foodGroups}
-        mealTypes={mealTypes}
-        open={planOpen}
-        onOpenChange={setPlanOpen}
-      />
+      {role !== "lider" && (
+        <NutritionPlanSheet
+          playerId={playerId}
+          playerSex={playerSex}
+          playerBirthDate={playerBirthDate}
+          assessment={assessment}
+          existingPlan={existingPlan}
+          thresholds={thresholds}
+          dietTypes={dietTypes}
+          foodGroups={foodGroups}
+          mealTypes={mealTypes}
+          open={planOpen}
+          onOpenChange={setPlanOpen}
+        />
+      )}
 
       {role === "admin" && (
         <AssessmentFormSheet mode="edit" assessment={assessment} open={editOpen} onOpenChange={setEditOpen} />

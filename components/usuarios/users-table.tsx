@@ -1,11 +1,7 @@
 import Link from "next/link";
 import { UserStatusToggle } from "@/components/usuarios/user-status-toggle";
+import { ROLE_LABELS } from "@/lib/auth/format";
 import type { UserRow } from "@/lib/usuarios/queries";
-
-const ROLE_LABELS: Record<string, string> = {
-  admin: "Admin",
-  nutricionista: "Nutricionista",
-};
 
 export function UsersTable({ users, currentUserId }: { users: UserRow[]; currentUserId: string }) {
   if (users.length === 0) {

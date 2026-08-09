@@ -2,6 +2,7 @@
 
 import { useActionState, useRef } from "react";
 import { uploadPlayerPhoto } from "@/lib/jugadores/actions";
+import { useUserProfile } from "@/lib/auth/user-profile-context";
 
 type UploadState = { error?: string } | null;
 
@@ -16,6 +17,10 @@ type UploadState = { error?: string } | null;
  * se agrega un ícono chico siempre visible en la esquina (sm:hidden, el
  * hover-reveal de desktop ya cumple ese rol de ahí en adelante) para que
  * la acción sea descubrible sin depender de que alguien toque "a ciegas".
+ *
+ * `lider` ve la foto pero sin ninguna affordance de edición (ni el botón
+ * clicable, ni el scrim, ni el ícono de esquina en mobile) -- la subida
+ * fallaría igual bajo RLS, así que se degrada a un <div> puramente visual.
  */
 export function PlayerPhotoUploader({
   playerId,
@@ -26,6 +31,7 @@ export function PlayerPhotoUploader({
   photoUrl: string | null;
   birthYear?: number;
 }) {
+  const { role } = useUserProfile();
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -37,6 +43,27 @@ export function PlayerPhotoUploader({
       return { error: error instanceof Error ? error.message : "No se pudo subir la foto." };
     }
   }, null);
+
+  if (role === "lider") {
+    return (
+      <div className="relative h-24 w-24 shrink-0">
+        <div className="h-24 w-24 overflow-hidden rounded-full border border-border bg-background">
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- URL firmada de corta duración, no vale la pena el pipeline de next/image para esto.
+            <img src={photoUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-[10px] text-muted">Sin foto</div>
+          )}
+        </div>
+
+        {birthYear != null && (
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-medium text-foreground">
+            {birthYear}
+          </span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <form ref={formRef} action={formAction} className="w-fit">

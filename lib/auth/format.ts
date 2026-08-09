@@ -1,6 +1,7 @@
 export const ROLE_LABELS: Record<string, string> = {
   admin: "Admin",
   nutricionista: "Nutricionista",
+  lider: "Líder",
 };
 
 export function getInitials(fullName: string): string {

@@ -10,6 +10,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.15"
   }
@@ -755,7 +757,7 @@ export type Database = {
       player_sex: "Hombre" | "Mujer"
       player_status: "active" | "inactive"
       threshold_metric: "skinfold_sum" | "aks_index"
-      user_role: "admin" | "nutricionista"
+      user_role: "admin" | "nutricionista" | "lider"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -886,7 +888,7 @@ export const Constants = {
       player_sex: ["Hombre", "Mujer"],
       player_status: ["active", "inactive"],
       threshold_metric: ["skinfold_sum", "aks_index"],
-      user_role: ["admin", "nutricionista"],
+      user_role: ["admin", "nutricionista", "lider"],
     },
   },
 } as const

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PlayersTable } from "@/components/jugadores/players-table";
+import { requireProfile } from "@/lib/auth/session";
 import { listPlayers, type PlayerStatusFilter } from "@/lib/jugadores/queries";
 
 const TABS: { label: string; value: PlayerStatusFilter }[] = [
@@ -17,7 +18,8 @@ export default async function JugadoresPage({
   const currentStatus: PlayerStatusFilter =
     status === "inactive" || status === "all" ? status : "active";
 
-  const players = await listPlayers(currentStatus);
+  const [players, { profile }] = await Promise.all([listPlayers(currentStatus), requireProfile()]);
+  const isLider = profile.role === "lider";
 
   return (
     <div className="space-y-6">
@@ -26,9 +28,11 @@ export default async function JugadoresPage({
           <h2 className="text-lg font-semibold text-foreground">Jugadores</h2>
           <p className="text-sm text-muted">Nunca se borran físicamente: solo se inactivan.</p>
         </div>
-        <Link href="/jugadores/nuevo" className="btn-primary">
-          Nuevo jugador
-        </Link>
+        {!isLider && (
+          <Link href="/jugadores/nuevo" className="btn-primary">
+            Nuevo jugador
+          </Link>
+        )}
       </div>
 
       <div className="flex gap-1 border-b border-border">

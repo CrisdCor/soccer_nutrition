@@ -7,6 +7,7 @@ import { PlayerNutritionPlanTab } from "@/components/jugadores/player-nutrition-
 import { AssessmentFormSheet } from "@/components/valoraciones/assessment-form-sheet";
 import { NutritionPlanSheet } from "@/components/nutricion/nutrition-plan-sheet";
 import type { AssessmentDetailFields } from "@/components/valoraciones/assessment-detail-groups";
+import { useUserProfile } from "@/lib/auth/user-profile-context";
 import type { ThresholdRange } from "@/lib/format";
 import type { NutritionPlanFull } from "@/lib/nutricion/queries";
 
@@ -46,6 +47,8 @@ export function PlayerAssessmentsTabs({
   foodGroups: CatalogOption[];
   mealTypes: MealType[];
 }) {
+  const { role } = useUserProfile();
+  const isLider = role === "lider";
   const [newAssessmentOpen, setNewAssessmentOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
 
@@ -60,20 +63,22 @@ export function PlayerAssessmentsTabs({
           <Tabs.Trigger value="plan-nutricional">Plan Nutricional</Tabs.Trigger>
         </Tabs.List>
 
-        <div className="flex gap-2">
-          {latestAssessment ? (
-            <button type="button" onClick={() => setPlanOpen(true)} className="btn-secondary">
-              {latestHasPlan ? "Editar plan" : "Crear plan"}
+        {!isLider && (
+          <div className="flex gap-2">
+            {latestAssessment ? (
+              <button type="button" onClick={() => setPlanOpen(true)} className="btn-secondary">
+                {latestHasPlan ? "Editar plan" : "Crear plan"}
+              </button>
+            ) : (
+              <button type="button" disabled title="Registra una valoración primero" className="btn-secondary">
+                Crear plan
+              </button>
+            )}
+            <button type="button" onClick={() => setNewAssessmentOpen(true)} className="btn-primary">
+              Nueva valoración
             </button>
-          ) : (
-            <button type="button" disabled title="Registra una valoración primero" className="btn-secondary">
-              Crear plan
-            </button>
-          )}
-          <button type="button" onClick={() => setNewAssessmentOpen(true)} className="btn-primary">
-            Nueva valoración
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       <Tabs.Content value="valoraciones" className="pt-4">

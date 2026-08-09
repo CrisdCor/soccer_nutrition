@@ -16,6 +16,15 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const PUBLIC_ROUTES = ["/login"];
 const ADMIN_ROUTE_PREFIXES = ["/usuarios", "/catalogos"];
 
+// role = 'lider' es de solo lectura en toda la app (RLS ya lo bloquea a
+// nivel de escritura). Crear/editar jugador son las únicas rutas de
+// creación/edición que siguen siendo standalone -- valoraciones y planes
+// nutricionales se crean/editan en paneles laterales (Sheet) disparados por
+// botones, no por URL, así que ocultar esos botones alcanza para ese caso.
+function isLiderBlockedRoute(pathname: string): boolean {
+  return pathname === "/jugadores/nuevo" || (pathname.startsWith("/jugadores/") && pathname.endsWith("/editar"));
+}
+
 export async function proxy(request: NextRequest) {
   // response empieza como passthrough; createServerClient la reasigna cada
   // vez que necesita escribir cookies de sesión refrescadas.
@@ -74,6 +83,23 @@ export async function proxy(request: NextRequest) {
     if (profile?.role !== "admin") {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/dashboard";
+      redirectUrl.search = "";
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
+  // 4) lider no puede crear/editar jugadores -- redirige al listado en vez
+  //    de dejarlo llegar a un formulario que solo fallaría al enviarlo.
+  if (user && isLiderBlockedRoute(pathname)) {
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role === "lider") {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/jugadores";
       redirectUrl.search = "";
       return NextResponse.redirect(redirectUrl);
     }

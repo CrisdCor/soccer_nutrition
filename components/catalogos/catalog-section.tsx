@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { Switch } from "@/components/ui/switch";
+import { useUserProfile } from "@/lib/auth/user-profile-context";
 import { catalogItemSchema, type CatalogItemValues } from "@/lib/validation/catalog";
 
 type CatalogItem = { id: string; name: string; active: boolean };
@@ -19,6 +20,8 @@ export function CatalogSection({
   createAction: (values: CatalogItemValues) => Promise<{ error?: string } | void>;
   toggleAction: (id: string, active: boolean) => Promise<void>;
 }) {
+  const { role } = useUserProfile();
+  const isLider = role === "lider";
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -48,20 +51,22 @@ export function CatalogSection({
       <ul className="mt-4 divide-y divide-border">
         {items.length === 0 && <li className="py-3 text-sm text-muted">Sin registros todavía.</li>}
         {items.map((item) => (
-          <CatalogItemRow key={item.id} item={item} toggleAction={toggleAction} />
+          <CatalogItemRow key={item.id} item={item} toggleAction={toggleAction} readOnly={isLider} />
         ))}
       </ul>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-4 flex items-start gap-2" noValidate>
-        <div className="flex-1">
-          <input className="input" placeholder="Nombre" {...register("name")} />
-          {errors.name && <p className="mt-1 text-xs text-brand-red">{errors.name.message}</p>}
-          {formError && <p className="mt-1 text-xs text-brand-red">{formError}</p>}
-        </div>
-        <button type="submit" disabled={isSubmitting} className="btn-primary">
-          Agregar
-        </button>
-      </form>
+      {!isLider && (
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-4 flex items-start gap-2" noValidate>
+          <div className="flex-1">
+            <input className="input" placeholder="Nombre" {...register("name")} />
+            {errors.name && <p className="mt-1 text-xs text-brand-red">{errors.name.message}</p>}
+            {formError && <p className="mt-1 text-xs text-brand-red">{formError}</p>}
+          </div>
+          <button type="submit" disabled={isSubmitting} className="btn-primary">
+            Agregar
+          </button>
+        </form>
+      )}
     </div>
   );
 }
@@ -73,9 +78,11 @@ export function CatalogSection({
 function CatalogItemRow({
   item,
   toggleAction,
+  readOnly,
 }: {
   item: CatalogItem;
   toggleAction: (id: string, active: boolean) => Promise<void>;
+  readOnly: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -90,12 +97,16 @@ function CatalogItemRow({
       <span className={item.active ? "text-sm text-foreground" : "text-sm text-muted line-through"}>
         {item.name}
       </span>
-      <Switch
-        checked={item.active}
-        onCheckedChange={handleChange}
-        disabled={isPending}
-        aria-label={item.active ? `Desactivar ${item.name}` : `Activar ${item.name}`}
-      />
+      {readOnly ? (
+        <span className="text-sm text-muted">{item.active ? "Activo" : "Inactivo"}</span>
+      ) : (
+        <Switch
+          checked={item.active}
+          onCheckedChange={handleChange}
+          disabled={isPending}
+          aria-label={item.active ? `Desactivar ${item.name}` : `Activar ${item.name}`}
+        />
+      )}
     </li>
   );
 }

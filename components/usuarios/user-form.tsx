@@ -60,6 +60,7 @@ export function UserForm({
         <select className="select" {...register("role")}>
           <option value="nutricionista">Nutricionista</option>
           <option value="admin">Admin</option>
+          <option value="lider">Líder</option>
         </select>
       </Field>
 

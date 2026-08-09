@@ -149,6 +149,42 @@ categorías) pide confirmación explícita antes de ejecutar el `UPDATE`, vía
 rojo: el riesgo ya está mitigado con la confirmación misma). Reactivar no la
 pide, al no tener una consecuencia real.
 
+### Rol `lider` (solo lectura)
+
+Tercer valor del enum `user_role` (junto a `admin`/`nutricionista`), agregado
+directamente en Supabase (enum + políticas RLS) sin ninguna migración en este
+repo — la fuente de verdad de qué puede escribir `lider` es RLS, no la UI.
+La capa de UI solo se encarga de **no mostrar** controles que RLS ya
+rechazaría, para no exponer botones que fallarían al usarse:
+
+- `PlayerActionsMenu`, `PlayerStatusToggle`, `PlayerPhotoUploader`: se
+  degradan a `null`/texto plano en vez del control interactivo cuando
+  `role === "lider"` (gateado vía `useUserProfile()`, mismo patrón que el
+  resto de componentes sensibles al rol).
+- `PlayerAssessmentsTabs`/`PlayerNutritionPlanTab`: ocultan "Nueva
+  valoración" y "Crear/Editar plan" para `lider`.
+- `AssessmentRowActions`: oculta "Ver/crear plan nutricional" (siempre abre
+  el panel de formulario) pero conserva "Ver detalle", que es de solo
+  lectura.
+- `CatalogSection` (compartido por `/catalogos` y `/configuracion`): oculta
+  el formulario "Agregar" y reemplaza cada `Switch` por texto read-only
+  ("Activo"/"Inactivo") para `lider` — cubre Posiciones, Categorías, Tipos
+  de dieta y Grupos de alimentos con un único cambio.
+- `app/(app)/jugadores/page.tsx`: oculta el botón "Nuevo jugador" para
+  `lider` (vía `requireProfile()`, Server Component).
+- `proxy.ts`: además del bloqueo por rol ya existente para `/usuarios` y
+  `/catalogos`, redirige a `lider` fuera de `/jugadores/nuevo` y
+  `/jugadores/[id]/editar` — las dos únicas pantallas de creación/edición
+  que siguen siendo rutas standalone (valoraciones y planes nutricionales
+  se crean/editan en paneles laterales disparados por botones, no por URL,
+  así que ocultar esos botones ya es suficiente ahí).
+- `requireAdmin()` y los gates `role === "admin"` existentes (p. ej. "Editar
+  valoración", el módulo Usuarios) ya excluían a `lider` automáticamente,
+  sin necesitar ningún cambio.
+
+`lider` se crea igual que cualquier otro usuario, desde `/usuarios`
+(selecciona "Líder" en el campo Rol).
+
 ## Fotografía de jugadores
 
 Bucket de Storage **privado** (`player-photos`, `public = false`, 5 MB, solo

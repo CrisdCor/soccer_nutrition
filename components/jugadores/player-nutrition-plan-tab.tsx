@@ -5,6 +5,7 @@ import { NutritionPlanReport } from "@/components/nutricion/nutrition-plan-repor
 import { NutritionPlanSheet } from "@/components/nutricion/nutrition-plan-sheet";
 import { FilterSelect } from "@/components/ui/filter-select";
 import type { AssessmentDetailFields } from "@/components/valoraciones/assessment-detail-groups";
+import { useUserProfile } from "@/lib/auth/user-profile-context";
 import type { ThresholdRange } from "@/lib/format";
 import type { NutritionPlanFull } from "@/lib/nutricion/queries";
 
@@ -43,6 +44,8 @@ export function PlayerNutritionPlanTab({
   foodGroups: CatalogOption[];
   mealTypes: MealType[];
 }) {
+  const { role } = useUserProfile();
+  const isLider = role === "lider";
   const defaultId = useMemo(
     () => assessments.find((a) => nutritionPlansByAssessment[a.id])?.id ?? assessments[0]?.id ?? "",
     [assessments, nutritionPlansByAssessment]
@@ -76,9 +79,11 @@ export function PlayerNutritionPlanTab({
           }))}
         />
 
-        <button type="button" onClick={() => setSheetOpen(true)} className="btn-secondary">
-          {existingPlan ? "Editar plan" : "Crear plan"}
-        </button>
+        {!isLider && (
+          <button type="button" onClick={() => setSheetOpen(true)} className="btn-secondary">
+            {existingPlan ? "Editar plan" : "Crear plan"}
+          </button>
+        )}
       </div>
 
       {existingPlan ? (
@@ -88,25 +93,29 @@ export function PlayerNutritionPlanTab({
           <p className="text-sm text-muted">
             La valoración {assessment.label} · {assessment.assessment_date} todavía no tiene plan de alimentación.
           </p>
-          <button type="button" onClick={() => setSheetOpen(true)} className="btn-primary mt-4">
-            Crear plan
-          </button>
+          {!isLider && (
+            <button type="button" onClick={() => setSheetOpen(true)} className="btn-primary mt-4">
+              Crear plan
+            </button>
+          )}
         </div>
       )}
 
-      <NutritionPlanSheet
-        playerId={playerId}
-        playerSex={playerSex}
-        playerBirthDate={playerBirthDate}
-        assessment={assessment}
-        existingPlan={existingPlan}
-        thresholds={thresholds}
-        dietTypes={dietTypes}
-        foodGroups={foodGroups}
-        mealTypes={mealTypes}
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-      />
+      {!isLider && (
+        <NutritionPlanSheet
+          playerId={playerId}
+          playerSex={playerSex}
+          playerBirthDate={playerBirthDate}
+          assessment={assessment}
+          existingPlan={existingPlan}
+          thresholds={thresholds}
+          dietTypes={dietTypes}
+          foodGroups={foodGroups}
+          mealTypes={mealTypes}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+        />
+      )}
     </div>
   );
 }
