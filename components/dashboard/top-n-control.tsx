@@ -1,6 +1,13 @@
 "use client";
 
+import { FilterSelect } from "@/components/ui/filter-select";
 import type { TopNDirection } from "@/lib/dashboard/report-helpers";
+
+const OPTIONS = [
+  { value: "none", label: "Todos" },
+  { value: "best", label: "Top mejores" },
+  { value: "worst", label: "Top peores" },
+];
 
 /**
  * "Todos" (sin recorte, default) / "Top N mejores" / "Top N peores", con N
@@ -20,18 +27,12 @@ export function TopNControl({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <select
-        className="select w-auto"
+      <FilterSelect
+        aria-label="Filtro Top N"
         value={direction ?? "none"}
-        onChange={(event) => {
-          const value = event.target.value;
-          onDirectionChange(value === "none" ? null : (value as TopNDirection));
-        }}
-      >
-        <option value="none">Todos</option>
-        <option value="best">Top mejores</option>
-        <option value="worst">Top peores</option>
-      </select>
+        onValueChange={(value) => onDirectionChange(value === "none" ? null : (value as TopNDirection))}
+        options={OPTIONS}
+      />
       {direction && (
         <input
           type="number"

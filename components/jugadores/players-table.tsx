@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PlayerStatusToggle } from "@/components/jugadores/player-status-toggle";
+import { FilterSelect } from "@/components/ui/filter-select";
 import { computeDisplayAge } from "@/lib/calculations";
 
 type PlayerRow = {
@@ -74,27 +75,34 @@ export function PlayersTable({ players }: { players: PlayerRow[] }) {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
-        <select className="select w-auto" value={category} onChange={(event) => setCategory(event.target.value)}>
-          <option value={ALL}>Todas las categorías</option>
-          {categoryOptions.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <select className="select w-auto" value={position} onChange={(event) => setPosition(event.target.value)}>
-          <option value={ALL}>Todas las posiciones</option>
-          {positionOptions.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <select className="select w-auto" value={sex} onChange={(event) => setSex(event.target.value)}>
-          <option value={ALL}>Todos los sexos</option>
-          <option value="Hombre">Hombre</option>
-          <option value="Mujer">Mujer</option>
-        </select>
+        <FilterSelect
+          aria-label="Filtrar por categoría"
+          value={category}
+          onValueChange={setCategory}
+          options={[
+            { value: ALL, label: "Todas las categorías" },
+            ...categoryOptions.map((name) => ({ value: name, label: name })),
+          ]}
+        />
+        <FilterSelect
+          aria-label="Filtrar por posición"
+          value={position}
+          onValueChange={setPosition}
+          options={[
+            { value: ALL, label: "Todas las posiciones" },
+            ...positionOptions.map((name) => ({ value: name, label: name })),
+          ]}
+        />
+        <FilterSelect
+          aria-label="Filtrar por sexo"
+          value={sex}
+          onValueChange={setSex}
+          options={[
+            { value: ALL, label: "Todos los sexos" },
+            { value: "Hombre", label: "Hombre" },
+            { value: "Mujer", label: "Mujer" },
+          ]}
+        />
       </div>
 
       {filtered.length === 0 ? (

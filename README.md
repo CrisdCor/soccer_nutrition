@@ -154,6 +154,26 @@ exclusivamente por `lib/supabase/admin.ts` (service_role) en servidor:
   `<input type="file" className="hidden">` vía `ref`, y `onChange` hace
   `requestSubmit()` del formulario automáticamente (no hace falta botón).
 
+## Selector de filtros
+
+`components/ui/filter-select.tsx` (`FilterSelect`, sobre `@radix-ui/react-select`)
+es el componente compartido para todo selector que solo cambia qué se
+MUESTRA en pantalla — filtros de `/jugadores`, de `/dashboard` y de las 5
+visualizaciones del dashboard, selector de valoración del tab "Plan
+Nutricional". Look de "chip" (referencia: el selector "All environments" de
+Vercel): píldora blanca de ancho automático cerrada, fondo oscuro + texto
+blanco abierta, menú flotante con ✓ en la opción elegida (nunca relleno de
+color) y hover gris claro.
+
+Deliberadamente **no** reemplaza los `<select>` nativos (clase `.select`)
+de los campos de formulario reales atados a `react-hook-form` (Sexo/Raza/
+Posición/Categoría de jugador, Rol de usuario, Métrica de umbral, ajuste
+calórico del plan) — ahí un `<select>` nativo sigue siendo lo correcto
+(accesible, funciona con el picker nativo, encaja visualmente en una grilla
+de inputs) y cambiarlo requeriría reescribir esos formularios con
+`Controller`. Si en algún momento se quiere el mismo look ahí también, es
+un trabajo aparte.
+
 ## Perfil de jugador
 
 Encabezado unificado (una sola card): foto con badge del año de nacimiento

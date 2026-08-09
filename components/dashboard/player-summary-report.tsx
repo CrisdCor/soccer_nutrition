@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { FilterSelect } from "@/components/ui/filter-select";
 import { ALL, LATEST } from "@/lib/dashboard/report-helpers";
 import type { ReportAssessment, ReportPlayer } from "@/lib/dashboard/report-queries";
 import { formatIndicator } from "@/lib/format";
@@ -89,37 +90,35 @@ export function PlayerSummaryReport({
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <select className="select w-auto" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-          <option value={ALL}>Todas las categorías</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
+        <FilterSelect
+          aria-label="Filtrar por categoría"
+          value={categoryId}
+          onValueChange={setCategoryId}
+          options={[
+            { value: ALL, label: "Todas las categorías" },
+            ...categories.map((category) => ({ value: category.id, label: category.name })),
+          ]}
+        />
 
-        <select className="select w-auto" value={effectivePlayerId} onChange={(e) => setPlayerId(e.target.value)}>
-          {filteredPlayers.length === 0 && <option value="">Sin jugadores</option>}
-          {filteredPlayers.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.full_name}
-            </option>
-          ))}
-        </select>
+        <FilterSelect
+          aria-label="Jugador"
+          value={effectivePlayerId}
+          onValueChange={setPlayerId}
+          disabled={filteredPlayers.length === 0}
+          placeholder="Sin jugadores"
+          options={filteredPlayers.map((p) => ({ value: p.id, label: p.full_name }))}
+        />
 
-        <select
-          className="select w-auto"
+        <FilterSelect
+          aria-label="Filtrar por valoración"
           value={effectiveValoracionLabel}
-          onChange={(e) => setValoracionLabel(e.target.value)}
+          onValueChange={setValoracionLabel}
           disabled={history.length === 0}
-        >
-          <option value={LATEST}>Valoración más reciente</option>
-          {[...history].reverse().map((a) => (
-            <option key={a.id} value={a.label}>
-              {a.label} · {a.assessment_date}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: LATEST, label: "Valoración más reciente" },
+            ...[...history].reverse().map((a) => ({ value: a.label, label: `${a.label} · ${a.assessment_date}` })),
+          ]}
+        />
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">

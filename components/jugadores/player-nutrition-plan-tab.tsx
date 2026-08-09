@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { NutritionPlanReport } from "@/components/nutricion/nutrition-plan-report";
 import { NutritionPlanSheet } from "@/components/nutricion/nutrition-plan-sheet";
+import { FilterSelect } from "@/components/ui/filter-select";
 import type { AssessmentDetailFields } from "@/components/valoraciones/assessment-detail-groups";
 import type { ThresholdRange } from "@/lib/format";
 import type { NutritionPlanFull } from "@/lib/nutricion/queries";
@@ -65,18 +66,15 @@ export function PlayerNutritionPlanTab({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <select
-          className="select w-auto"
+        <FilterSelect
+          aria-label="Filtrar por valoración"
           value={assessment.id}
-          onChange={(event) => setSelectedId(event.target.value)}
-        >
-          {assessments.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.assessment_date} · {a.label}
-              {nutritionPlansByAssessment[a.id] ? "" : " (sin plan)"}
-            </option>
-          ))}
-        </select>
+          onValueChange={setSelectedId}
+          options={assessments.map((a) => ({
+            value: a.id,
+            label: `${a.assessment_date} · ${a.label}${nutritionPlansByAssessment[a.id] ? "" : " (sin plan)"}`,
+          }))}
+        />
 
         <button type="button" onClick={() => setSheetOpen(true)} className="btn-secondary">
           {existingPlan ? "Editar plan" : "Crear plan"}
