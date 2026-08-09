@@ -111,3 +111,39 @@ export function applyTopN<T>(
 
   return sorted.slice(0, n);
 }
+
+export type SortDirection = "asc" | "desc";
+
+/**
+ * Orden de despliegue de un gráfico de columnas (control "mayor a menor" /
+ * "menor a mayor") -- distinto y aplicado DESPUÉS de applyTopN(): Top N
+ * decide qué jugadores entran, esto decide en qué orden se dibujan. Mismo
+ * criterio de nulls-al-final que applyTopN().
+ */
+export function sortByValue<T>(
+  items: T[],
+  getValue: (item: T) => number | null,
+  direction: SortDirection
+): T[] {
+  return [...items].sort((a, b) => {
+    const va = getValue(a);
+    const vb = getValue(b);
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    return direction === "asc" ? va - vb : vb - va;
+  });
+}
+
+/**
+ * "Adrián Martínez" -> "Adrián M." -- para el eje X de los gráficos de
+ * columnas (referencia: gráficos compactos, pocos labels, sin ruido
+ * visual). El nombre completo se sigue mostrando en el tooltip al pasar el
+ * mouse; esto es solo para el tick del eje.
+ */
+export function shortenName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return fullName;
+  const lastInitial = parts[parts.length - 1][0];
+  return `${parts[0]} ${lastInitial}.`;
+}

@@ -10,7 +10,10 @@ import {
   LATEST,
   applyTopN,
   selectPlayerAssessments,
+  shortenName,
+  sortByValue,
   type PlayerAssessmentPair,
+  type SortDirection,
   type TopNDirection,
 } from "@/lib/dashboard/report-helpers";
 import type { ReportAssessment, ReportPlayer } from "@/lib/dashboard/report-queries";
@@ -54,6 +57,7 @@ export function SingleMetricReport({
   const [topNDirection, setTopNDirection] = useState<TopNDirection>(null);
   const [topN, setTopN] = useState(10);
   const [viewMode, setViewMode] = useState<"table" | "bars">("bars");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   const pairs = useMemo(
     () =>
@@ -70,13 +74,14 @@ export function SingleMetricReport({
   const getValue = (pair: PlayerAssessmentPair) => pair.assessment[metricKey];
 
   const rows = useMemo(
-    () => applyTopN(pairs, getValue, topNDirection, topN),
+    () => sortByValue(applyTopN(pairs, getValue, topNDirection, topN), getValue, sortDirection),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pairs, topNDirection, topN]
+    [pairs, topNDirection, topN, sortDirection]
   );
 
   const chartData = rows.map((pair) => ({
     name: pair.player.full_name,
+    shortName: shortenName(pair.player.full_name),
     [metricKey]: pair.assessment[metricKey],
   }));
 
@@ -96,6 +101,14 @@ export function SingleMetricReport({
         />
         <div className="flex items-center gap-3">
           <TopNControl direction={topNDirection} onDirectionChange={setTopNDirection} n={topN} onNChange={setTopN} />
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => setSortDirection(sortDirection === "desc" ? "asc" : "desc")}
+            aria-label={sortDirection === "desc" ? "Orden: mayor a menor" : "Orden: menor a mayor"}
+          >
+            {sortDirection === "desc" ? "↓ Mayor a menor" : "↑ Menor a mayor"}
+          </button>
           <button type="button" className="btn-secondary" onClick={() => setViewMode(viewMode === "bars" ? "table" : "bars")}>
             {viewMode === "bars" ? "Ver tabla" : "Ver columnas"}
           </button>

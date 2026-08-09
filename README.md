@@ -304,10 +304,27 @@ la página; cada vista maneja su propio scroll vertical interno.
   reciente de cada jugador.
 - Gráficos de columnas verticales (`report-bar-chart.tsx`, eje X = jugador,
   eje Y = valor): con un plantel grande, el ancho total puede superar el
-  contenedor, así que el propio gráfico scrollea horizontal (`overflow-x-auto`
-  + un `minWidth` calculado por cantidad de columnas) en vez de apretar
-  decenas de nombres en un ancho fijo. Líneas de referencia horizontales
-  cuando hay umbral configurado (`reference_thresholds`, nunca hardcodeado).
+  contenedor, así que el propio gráfico scrollea horizontal únicamente
+  (`overflow-x-auto overflow-y-hidden` -- **los dos explícitos**: dejar
+  overflow-y en su valor inicial `visible` mientras overflow-x es `auto`
+  hace que el navegador lo compute como `auto` también, por spec de CSS,
+  abriendo la puerta a un scrollbar vertical que interactúa con el
+  horizontal -- cada uno le come espacio de layout al otro eje -- y esa
+  interacción era la causa real del titileo: ResizeObserver de Recharts
+  detecta el cambio, redibuja, eso cambia si hace falta el scrollbar,
+  vuelve a redibujar, indefinidamente. El wrapper que mide
+  `ResponsiveContainer` tiene ancho y alto en píxeles fijos siempre, nunca
+  `100%`/heredado -- el otro requisito para no reentrar en ese bucle) con
+  un ancho mínimo por columna (56px sola, 88px agrupada) en vez de apretar
+  decenas de nombres en un ancho fijo. Nombres del eje X abreviados
+  (`shortenName()`: "Adrián Martínez" → "Adrián M."), con el nombre
+  completo en el tooltip (vía `labelFormatter`, leyendo el payload en vez
+  de duplicar el dataKey del eje). Control "mayor a menor"/"menor a mayor"
+  independiente del Top N (Top N decide qué jugadores entran, este orden
+  decide en qué orden se dibujan) -- no aplica a la evolución de AKS, que
+  se mantiene siempre en orden cronológico. Líneas de referencia
+  horizontales cuando hay umbral configurado (`reference_thresholds`,
+  nunca hardcodeado).
 - Colores en tabla: `RangeBadge` marca "Fuera de rango" en rojo (badge, no
   relleno de fila) solo cuando el valor cae fuera del umbral; dentro de
   rango no se pinta nada — ausencia de color = está bien, mismo principio

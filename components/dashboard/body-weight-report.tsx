@@ -4,7 +4,16 @@ import { useMemo, useState } from "react";
 import { ReportBarChart } from "@/components/dashboard/report-bar-chart";
 import { ReportFilters } from "@/components/dashboard/report-filters";
 import { TopNControl } from "@/components/dashboard/top-n-control";
-import { ALL, LATEST, applyTopN, selectPlayerAssessments, type TopNDirection } from "@/lib/dashboard/report-helpers";
+import {
+  ALL,
+  LATEST,
+  applyTopN,
+  selectPlayerAssessments,
+  shortenName,
+  sortByValue,
+  type SortDirection,
+  type TopNDirection,
+} from "@/lib/dashboard/report-helpers";
 import type { ReportAssessment, ReportPlayer } from "@/lib/dashboard/report-queries";
 import { formatIndicator } from "@/lib/format";
 
@@ -36,6 +45,7 @@ export function BodyWeightReport({
   const [topNDirection, setTopNDirection] = useState<TopNDirection>(null);
   const [topN, setTopN] = useState(10);
   const [viewMode, setViewMode] = useState<"table" | "bars">("bars");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   const pairs = useMemo(
     () =>
@@ -49,13 +59,20 @@ export function BodyWeightReport({
     [players, assessmentsByPlayer, categoryId, positionId, valoracionLabel]
   );
 
+  // Peso Corporal es la métrica de referencia tanto para Top N como para
+  // el orden mayor/menor -- no se especificó cuál de las dos usar, y se
+  // eligió la misma para ambos controles por consistencia.
+  const getValue = (pair: (typeof pairs)[number]) => pair.assessment.weight_kg;
+
   const rows = useMemo(
-    () => applyTopN(pairs, (pair) => pair.assessment.weight_kg, topNDirection, topN),
-    [pairs, topNDirection, topN]
+    () => sortByValue(applyTopN(pairs, getValue, topNDirection, topN), getValue, sortDirection),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pairs, topNDirection, topN, sortDirection]
   );
 
   const chartData = rows.map((pair) => ({
     name: pair.player.full_name,
+    shortName: shortenName(pair.player.full_name),
     weight_kg: pair.assessment.weight_kg,
     fat_free_mass_kg: pair.assessment.fat_free_mass_kg,
   }));
@@ -76,6 +93,14 @@ export function BodyWeightReport({
         />
         <div className="flex items-center gap-3">
           <TopNControl direction={topNDirection} onDirectionChange={setTopNDirection} n={topN} onNChange={setTopN} />
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => setSortDirection(sortDirection === "desc" ? "asc" : "desc")}
+            aria-label={sortDirection === "desc" ? "Orden: mayor a menor" : "Orden: menor a mayor"}
+          >
+            {sortDirection === "desc" ? "↓ Mayor a menor" : "↑ Menor a mayor"}
+          </button>
           <button type="button" className="btn-secondary" onClick={() => setViewMode(viewMode === "bars" ? "table" : "bars")}>
             {viewMode === "bars" ? "Ver tabla" : "Ver columnas"}
           </button>
