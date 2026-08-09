@@ -9,15 +9,22 @@ import type { ReactNode } from "react";
  * atrapado, cierra con Escape/clic fuera, desliza desde la derecha), pero
  * estilizado a mano con el Design System del proyecto (superficie blanca,
  * borde fino, sin colores llenos) en vez de copiar el estilo de referencia.
- * Transición vía CSS puro (translate-x + opacity combinados, 300ms
+ * Transición vía CSS puro (translate + opacity combinados, 300ms
  * ease-out, según data-state), sin librería de animación: Radix mantiene
  * el nodo montado en data-state="closed" hasta que termina la transición,
  * así que no hace falta forceMount.
  *
  * De sm en adelante el panel "flota" (con margen respecto a los bordes
  * superior/derecho/inferior y esquinas redondeadas, como el panel "Add
- * Environment Variable" de Vercel) en vez de ir a ras del viewport; en
- * mobile se mantiene a pantalla completa por espacio.
+ * Environment Variable" de Vercel) y desliza desde la derecha. En mobile
+ * (<640px, el uso real: la nutricionista carga mediciones en la cancha
+ * desde el celular) ocupa pantalla completa -- sin margen ni bordes
+ * redondeados, `inset-0` a ras del viewport -- y desliza desde ABAJO en
+ * vez de la derecha: se siente más nativo en mobile (mismo patrón que un
+ * action sheet de iOS/Material) que un panel lateral angosto. Los dos
+ * ejes de translate se resetean explícitamente en cada breakpoint (no
+ * alcanza con solo agregar el otro eje) para que no queden combinados en
+ * diagonal al cruzar el corte de `sm:`.
  */
 export const Root = DialogPrimitive.Root;
 export const Trigger = DialogPrimitive.Trigger;
@@ -47,7 +54,7 @@ export function Content({
         className="fixed inset-0 z-50 bg-black/40 transition-opacity duration-200 data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
       />
       <DialogPrimitive.Content
-        className={`fixed inset-y-0 right-0 z-50 flex h-full w-full flex-col overflow-hidden border-l border-border bg-surface outline-none transition-[transform,opacity] duration-300 ease-out data-[state=closed]:translate-x-full data-[state=closed]:opacity-0 data-[state=open]:translate-x-0 data-[state=open]:opacity-100 sm:inset-y-4 sm:right-4 sm:h-auto sm:rounded-lg sm:border sm:shadow-md ${SIZE_CLASSES[size]} ${className}`}
+        className={`fixed inset-0 z-50 flex h-full w-full flex-col overflow-hidden bg-surface outline-none transition-[transform,opacity] duration-300 ease-out data-[state=closed]:translate-x-0 data-[state=closed]:translate-y-full data-[state=closed]:opacity-0 data-[state=open]:translate-x-0 data-[state=open]:translate-y-0 data-[state=open]:opacity-100 sm:inset-y-4 sm:left-auto sm:right-4 sm:h-auto sm:rounded-lg sm:border sm:border-border sm:shadow-md sm:data-[state=closed]:translate-y-0 sm:data-[state=closed]:translate-x-full sm:data-[state=open]:translate-x-0 ${SIZE_CLASSES[size]} ${className}`}
         {...props}
       >
         {children}
@@ -58,7 +65,7 @@ export function Content({
 
 export function Header({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-4">
+    <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-4 sm:px-6">
       <div className="min-w-0">{children}</div>
       <Close
         className="btn-secondary shrink-0"
@@ -79,5 +86,5 @@ export function Description({ children }: { children: ReactNode }) {
 }
 
 export function Body({ children }: { children: ReactNode }) {
-  return <div className="flex-1 overflow-y-auto px-6 py-6">{children}</div>;
+  return <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">{children}</div>;
 }
