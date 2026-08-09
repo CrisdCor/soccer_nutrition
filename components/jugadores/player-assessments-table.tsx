@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MobileCardList } from "@/components/ui/mobile-card-list";
 import { AssessmentDetailSheet } from "@/components/valoraciones/assessment-detail-sheet";
 import { AssessmentRowActions } from "@/components/valoraciones/assessment-row-actions";
 import type { AssessmentDetailFields } from "@/components/valoraciones/assessment-detail-groups";
@@ -45,46 +46,82 @@ export function PlayerAssessmentsTable({
   const rows = [...assessments].reverse();
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-border text-xs text-muted">
-            <th className="px-4 py-3 font-medium">Fecha</th>
-            <th className="px-4 py-3 font-medium">Etiqueta</th>
-            <th className="px-4 py-3 font-medium">Peso</th>
-            <th className="px-4 py-3 font-medium">% Grasa</th>
-            <th className="px-4 py-3 font-medium">AKS</th>
-            <th className="px-4 py-3 font-medium" aria-label="Acciones" />
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((assessment) => (
-            <tr key={assessment.id} className="border-b border-border last:border-0">
-              <td className="px-4 py-3">
-                <AssessmentDateCell assessment={assessment} />
-              </td>
-              <td className="px-4 py-3 text-muted">{assessment.label}</td>
-              <td className="data px-4 py-3 text-muted">{formatIndicator(assessment.weight_kg, 1, " kg")}</td>
-              <td className="data px-4 py-3 text-muted">{formatPercentage(assessment.fat_percentage)}</td>
-              <td className="data px-4 py-3 text-muted">{formatIndicator(assessment.aks_index, 2)}</td>
-              <td className="px-4 py-3 text-right">
-                <AssessmentRowActions
-                  assessment={assessment}
-                  playerId={playerId}
-                  playerSex={playerSex}
-                  playerBirthDate={playerBirthDate}
-                  existingPlan={nutritionPlansByAssessment[assessment.id] ?? null}
-                  thresholds={thresholds}
-                  dietTypes={dietTypes}
-                  foodGroups={foodGroups}
-                  mealTypes={mealTypes}
-                />
-              </td>
+    <>
+      <MobileCardList
+        rows={rows}
+        keyFor={(assessment) => assessment.id}
+        title={(assessment) => <AssessmentDateCell assessment={assessment} />}
+        fields={[
+          { label: "Etiqueta", render: (assessment) => assessment.label },
+          {
+            label: "Peso",
+            render: (assessment) => <span className="data">{formatIndicator(assessment.weight_kg, 1, " kg")}</span>,
+          },
+          {
+            label: "% Grasa",
+            render: (assessment) => <span className="data">{formatPercentage(assessment.fat_percentage)}</span>,
+          },
+          {
+            label: "AKS",
+            render: (assessment) => <span className="data">{formatIndicator(assessment.aks_index, 2)}</span>,
+          },
+        ]}
+        actions={(assessment) => (
+          <AssessmentRowActions
+            assessment={assessment}
+            playerId={playerId}
+            playerSex={playerSex}
+            playerBirthDate={playerBirthDate}
+            existingPlan={nutritionPlansByAssessment[assessment.id] ?? null}
+            thresholds={thresholds}
+            dietTypes={dietTypes}
+            foodGroups={foodGroups}
+            mealTypes={mealTypes}
+          />
+        )}
+      />
+
+      <div className="hidden overflow-x-auto rounded-lg border border-border bg-surface sm:block">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-border text-xs text-muted">
+              <th className="px-4 py-3 font-medium">Fecha</th>
+              <th className="px-4 py-3 font-medium">Etiqueta</th>
+              <th className="px-4 py-3 font-medium">Peso</th>
+              <th className="px-4 py-3 font-medium">% Grasa</th>
+              <th className="px-4 py-3 font-medium">AKS</th>
+              <th className="px-4 py-3 font-medium" aria-label="Acciones" />
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {rows.map((assessment) => (
+              <tr key={assessment.id} className="border-b border-border last:border-0">
+                <td className="px-4 py-3">
+                  <AssessmentDateCell assessment={assessment} />
+                </td>
+                <td className="px-4 py-3 text-muted">{assessment.label}</td>
+                <td className="data px-4 py-3 text-muted">{formatIndicator(assessment.weight_kg, 1, " kg")}</td>
+                <td className="data px-4 py-3 text-muted">{formatPercentage(assessment.fat_percentage)}</td>
+                <td className="data px-4 py-3 text-muted">{formatIndicator(assessment.aks_index, 2)}</td>
+                <td className="px-4 py-3 text-right">
+                  <AssessmentRowActions
+                    assessment={assessment}
+                    playerId={playerId}
+                    playerSex={playerSex}
+                    playerBirthDate={playerBirthDate}
+                    existingPlan={nutritionPlansByAssessment[assessment.id] ?? null}
+                    thresholds={thresholds}
+                    dietTypes={dietTypes}
+                    foodGroups={foodGroups}
+                    mealTypes={mealTypes}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 

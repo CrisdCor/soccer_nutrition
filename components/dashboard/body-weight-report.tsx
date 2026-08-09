@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ReportBarChart } from "@/components/dashboard/report-bar-chart";
 import { ReportFilters } from "@/components/dashboard/report-filters";
 import { TopNControl } from "@/components/dashboard/top-n-control";
+import { MobileCardList } from "@/components/ui/mobile-card-list";
 import {
   ALL,
   LATEST,
@@ -116,34 +117,51 @@ export function BodyWeightReport({
               { key: "fat_free_mass_kg", label: "Masa libre de grasa", color: "blue" },
             ]}
           />
+        ) : rows.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-border-strong p-8 text-center text-sm text-muted">
+            No hay datos para los filtros seleccionados.
+          </p>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="sticky top-0 bg-surface">
-              <tr className="border-b border-border text-xs text-muted">
-                <th className="px-4 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 font-medium">Peso corporal</th>
-                <th className="px-4 py-3 font-medium">Masa libre de grasa</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((pair) => (
-                <tr key={pair.player.id} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3 font-medium text-foreground">{pair.player.full_name}</td>
-                  <td className="data px-4 py-3 text-muted">{formatIndicator(pair.assessment.weight_kg, 1, " kg")}</td>
-                  <td className="data px-4 py-3 text-muted">
-                    {formatIndicator(pair.assessment.fat_free_mass_kg, 2, " kg")}
-                  </td>
+          <>
+            <MobileCardList
+              rows={rows}
+              keyFor={(pair) => pair.player.id}
+              title={(pair) => <span className="font-medium text-foreground">{pair.player.full_name}</span>}
+              fields={[
+                {
+                  label: "Peso corporal",
+                  render: (pair) => <span className="data">{formatIndicator(pair.assessment.weight_kg, 1, " kg")}</span>,
+                },
+                {
+                  label: "Masa libre de grasa",
+                  render: (pair) => (
+                    <span className="data">{formatIndicator(pair.assessment.fat_free_mass_kg, 2, " kg")}</span>
+                  ),
+                },
+              ]}
+            />
+
+            <table className="hidden w-full text-left text-sm sm:table">
+              <thead className="sticky top-0 bg-surface">
+                <tr className="border-b border-border text-xs text-muted">
+                  <th className="px-4 py-3 font-medium">Nombre</th>
+                  <th className="px-4 py-3 font-medium">Peso corporal</th>
+                  <th className="px-4 py-3 font-medium">Masa libre de grasa</th>
                 </tr>
-              ))}
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-sm text-muted">
-                    No hay datos para los filtros seleccionados.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((pair) => (
+                  <tr key={pair.player.id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3 font-medium text-foreground">{pair.player.full_name}</td>
+                    <td className="data px-4 py-3 text-muted">{formatIndicator(pair.assessment.weight_kg, 1, " kg")}</td>
+                    <td className="data px-4 py-3 text-muted">
+                      {formatIndicator(pair.assessment.fat_free_mass_kg, 2, " kg")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
       </div>
     </div>

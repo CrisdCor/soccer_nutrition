@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { RangeBadge } from "@/components/dashboard/range-badge";
 import { ReportFilters } from "@/components/dashboard/report-filters";
 import { TopNControl } from "@/components/dashboard/top-n-control";
+import { MobileCardList } from "@/components/ui/mobile-card-list";
 import { computeDisplayAge } from "@/lib/calculations";
 import type { CurrentThresholds } from "@/lib/configuracion/queries";
 import { ALL, LATEST, selectPlayerAssessments, type PlayerAssessmentPair, type TopNDirection } from "@/lib/dashboard/report-helpers";
@@ -131,54 +132,105 @@ export function SummaryTableReport({
         <TopNControl direction={topNDirection} onDirectionChange={setTopNDirection} n={topN} onNChange={setTopN} />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-border">
-        <table className="w-full text-left text-sm">
-          <thead className="sticky top-0 bg-surface">
-            <tr className="border-b border-border text-xs text-muted">
-              {COLUMNS.map((column) => (
-                <th key={column.key} className="px-4 py-3 font-medium">
-                  <button
-                    type="button"
-                    onClick={() => handleSort(column.key)}
-                    className="flex items-center gap-1 hover:text-foreground"
-                  >
-                    {column.label}
-                    {sortKey === column.key && <span aria-hidden>{sortDir === "asc" ? "↑" : "↓"}</span>}
-                  </button>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((pair) => (
-              <tr key={pair.player.id} className="border-b border-border last:border-0">
-                <td className="px-4 py-3 text-muted">{pair.player.position?.name ?? "—"}</td>
-                <td className="px-4 py-3 font-medium text-foreground">{pair.player.full_name}</td>
-                <td className="data px-4 py-3 text-muted">
-                  {computeDisplayAge(new Date(pair.player.birth_date), new Date(pair.assessment.assessment_date))}
-                </td>
-                <td className="data px-4 py-3 text-muted">{formatIndicator(pair.assessment.height_cm, 1, " cm")}</td>
-                <td className="data px-4 py-3 text-muted">{formatIndicator(pair.assessment.weight_kg, 1, " kg")}</td>
-                <td className="data px-4 py-3 text-muted">{formatPercentage(pair.assessment.muscle_percentage)}</td>
-                <td className="data px-4 py-3 text-muted">
-                  {formatIndicator(pair.assessment.skinfold_sum_6, 1, " mm")}
-                  <RangeBadge value={pair.assessment.skinfold_sum_6} threshold={thresholds.skinfold_sum} />
-                </td>
-                <td className="data px-4 py-3 text-muted">
-                  {formatIndicator(pair.assessment.aks_index, 2)}
-                  <RangeBadge value={pair.assessment.aks_index} threshold={thresholds.aks_index} />
-                </td>
-              </tr>
-            ))}
-            {rows.length === 0 && (
-              <tr>
-                <td colSpan={COLUMNS.length} className="px-4 py-8 text-center text-sm text-muted">
-                  No hay datos para los filtros seleccionados.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div className="min-h-0 flex-1 overflow-y-auto sm:rounded-lg sm:border sm:border-border">
+        {rows.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-border-strong p-8 text-center text-sm text-muted">
+            No hay datos para los filtros seleccionados.
+          </p>
+        ) : (
+          <>
+            {/* Mobile: cards -- sin encabezados clicables (el orden se sigue
+                controlando con Top N; cambiar la columna de orden desde una
+                card queda fuera de este alcance). */}
+            <MobileCardList
+              rows={rows}
+              keyFor={(pair) => pair.player.id}
+              title={(pair) => <span className="font-medium text-foreground">{pair.player.full_name}</span>}
+              fields={[
+                { label: "Posición", render: (pair) => pair.player.position?.name ?? "—" },
+                {
+                  label: "Edad",
+                  render: (pair) => (
+                    <span className="data">
+                      {computeDisplayAge(new Date(pair.player.birth_date), new Date(pair.assessment.assessment_date))}
+                    </span>
+                  ),
+                },
+                {
+                  label: "Talla",
+                  render: (pair) => <span className="data">{formatIndicator(pair.assessment.height_cm, 1, " cm")}</span>,
+                },
+                {
+                  label: "Peso",
+                  render: (pair) => <span className="data">{formatIndicator(pair.assessment.weight_kg, 1, " kg")}</span>,
+                },
+                {
+                  label: "% Masa Muscular",
+                  render: (pair) => <span className="data">{formatPercentage(pair.assessment.muscle_percentage)}</span>,
+                },
+                {
+                  label: "Suma 6 Pliegues",
+                  render: (pair) => (
+                    <>
+                      <span className="data">{formatIndicator(pair.assessment.skinfold_sum_6, 1, " mm")}</span>
+                      <RangeBadge value={pair.assessment.skinfold_sum_6} threshold={thresholds.skinfold_sum} />
+                    </>
+                  ),
+                },
+                {
+                  label: "Índice AKS",
+                  render: (pair) => (
+                    <>
+                      <span className="data">{formatIndicator(pair.assessment.aks_index, 2)}</span>
+                      <RangeBadge value={pair.assessment.aks_index} threshold={thresholds.aks_index} />
+                    </>
+                  ),
+                },
+              ]}
+            />
+
+            <table className="hidden w-full text-left text-sm sm:table">
+              <thead className="sticky top-0 bg-surface">
+                <tr className="border-b border-border text-xs text-muted">
+                  {COLUMNS.map((column) => (
+                    <th key={column.key} className="px-4 py-3 font-medium">
+                      <button
+                        type="button"
+                        onClick={() => handleSort(column.key)}
+                        className="flex items-center gap-1 hover:text-foreground"
+                      >
+                        {column.label}
+                        {sortKey === column.key && <span aria-hidden>{sortDir === "asc" ? "↑" : "↓"}</span>}
+                      </button>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((pair) => (
+                  <tr key={pair.player.id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3 text-muted">{pair.player.position?.name ?? "—"}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{pair.player.full_name}</td>
+                    <td className="data px-4 py-3 text-muted">
+                      {computeDisplayAge(new Date(pair.player.birth_date), new Date(pair.assessment.assessment_date))}
+                    </td>
+                    <td className="data px-4 py-3 text-muted">{formatIndicator(pair.assessment.height_cm, 1, " cm")}</td>
+                    <td className="data px-4 py-3 text-muted">{formatIndicator(pair.assessment.weight_kg, 1, " kg")}</td>
+                    <td className="data px-4 py-3 text-muted">{formatPercentage(pair.assessment.muscle_percentage)}</td>
+                    <td className="data px-4 py-3 text-muted">
+                      {formatIndicator(pair.assessment.skinfold_sum_6, 1, " mm")}
+                      <RangeBadge value={pair.assessment.skinfold_sum_6} threshold={thresholds.skinfold_sum} />
+                    </td>
+                    <td className="data px-4 py-3 text-muted">
+                      {formatIndicator(pair.assessment.aks_index, 2)}
+                      <RangeBadge value={pair.assessment.aks_index} threshold={thresholds.aks_index} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
       </div>
     </div>
   );

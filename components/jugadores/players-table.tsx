@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PlayerStatusToggle } from "@/components/jugadores/player-status-toggle";
 import { FilterSelect } from "@/components/ui/filter-select";
+import { MobileCardList } from "@/components/ui/mobile-card-list";
 import { computeDisplayAge } from "@/lib/calculations";
 
 type PlayerRow = {
@@ -112,51 +113,83 @@ export function PlayersTable({ players }: { players: PlayerRow[] }) {
             : "No hay jugadores para mostrar."}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-border text-xs text-muted">
-                <th className="px-4 py-3 font-medium">Jugador</th>
-                <th className="px-4 py-3 font-medium">Documento</th>
-                <th className="px-4 py-3 font-medium">Edad</th>
-                <th className="px-4 py-3 font-medium">Sexo</th>
-                <th className="px-4 py-3 font-medium">Posición</th>
-                <th className="px-4 py-3 font-medium">Categoría</th>
-                <th className="px-4 py-3 font-medium"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((player) => (
-                <tr key={player.id} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3">
-                    <Link href={`/jugadores/${player.id}`} className="font-medium text-foreground hover:underline">
-                      {player.full_name}
-                    </Link>
-                    {player.home_club && (
-                      <span className="ml-2 rounded border border-brand-blue-soft bg-brand-blue-soft px-1.5 py-0.5 text-[10px] font-medium text-brand-blue">
-                        cantera
-                      </span>
-                    )}
-                  </td>
-                  <td className="data px-4 py-3 text-muted">{player.document}</td>
-                  <td className="data px-4 py-3 text-muted">
-                    {computeDisplayAge(new Date(player.birth_date))}
-                  </td>
-                  <td className="px-4 py-3 text-muted">{player.sex}</td>
-                  <td className="px-4 py-3 text-muted">{player.position?.name ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted">{player.category?.name ?? "—"}</td>
-                  <td className="px-4 py-3 text-right">
-                    <PlayerStatusToggle
-                      playerId={player.id}
-                      playerName={player.full_name}
-                      status={player.status}
-                    />
-                  </td>
+        <>
+          <MobileCardList
+            rows={filtered}
+            keyFor={(player) => player.id}
+            title={(player) => (
+              <>
+                <Link href={`/jugadores/${player.id}`} className="font-medium text-foreground hover:underline">
+                  {player.full_name}
+                </Link>
+                {player.home_club && (
+                  <span className="ml-2 rounded border border-brand-blue-soft bg-brand-blue-soft px-1.5 py-0.5 text-[10px] font-medium text-brand-blue">
+                    cantera
+                  </span>
+                )}
+              </>
+            )}
+            fields={[
+              { label: "Documento", render: (player) => <span className="data">{player.document}</span> },
+              {
+                label: "Edad",
+                render: (player) => <span className="data">{computeDisplayAge(new Date(player.birth_date))}</span>,
+              },
+              { label: "Sexo", render: (player) => player.sex },
+              { label: "Posición", render: (player) => player.position?.name ?? "—" },
+              { label: "Categoría", render: (player) => player.category?.name ?? "—" },
+            ]}
+            actions={(player) => (
+              <PlayerStatusToggle playerId={player.id} playerName={player.full_name} status={player.status} />
+            )}
+          />
+
+          <div className="hidden overflow-x-auto rounded-lg border border-border bg-surface sm:block">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-border text-xs text-muted">
+                  <th className="px-4 py-3 font-medium">Jugador</th>
+                  <th className="px-4 py-3 font-medium">Documento</th>
+                  <th className="px-4 py-3 font-medium">Edad</th>
+                  <th className="px-4 py-3 font-medium">Sexo</th>
+                  <th className="px-4 py-3 font-medium">Posición</th>
+                  <th className="px-4 py-3 font-medium">Categoría</th>
+                  <th className="px-4 py-3 font-medium"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map((player) => (
+                  <tr key={player.id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3">
+                      <Link href={`/jugadores/${player.id}`} className="font-medium text-foreground hover:underline">
+                        {player.full_name}
+                      </Link>
+                      {player.home_club && (
+                        <span className="ml-2 rounded border border-brand-blue-soft bg-brand-blue-soft px-1.5 py-0.5 text-[10px] font-medium text-brand-blue">
+                          cantera
+                        </span>
+                      )}
+                    </td>
+                    <td className="data px-4 py-3 text-muted">{player.document}</td>
+                    <td className="data px-4 py-3 text-muted">
+                      {computeDisplayAge(new Date(player.birth_date))}
+                    </td>
+                    <td className="px-4 py-3 text-muted">{player.sex}</td>
+                    <td className="px-4 py-3 text-muted">{player.position?.name ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted">{player.category?.name ?? "—"}</td>
+                    <td className="px-4 py-3 text-right">
+                      <PlayerStatusToggle
+                        playerId={player.id}
+                        playerName={player.full_name}
+                        status={player.status}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );
