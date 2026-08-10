@@ -54,6 +54,19 @@ export async function getNutritionPlansByPlayer(
   if (assessmentsError) throw assessmentsError;
 
   const assessmentIds = (assessmentRows ?? []).map((row) => row.id);
+  return getNutritionPlansByAssessmentIds(assessmentIds);
+}
+
+/**
+ * Igual que getNutritionPlansByPlayer, pero a partir de un set de
+ * assessment_id arbitrario en vez de "todas las de un jugador" -- lo usa el
+ * Reporte PDF (jugadores de varias filas, una valoración puntual cada uno).
+ */
+export async function getNutritionPlansByAssessmentIds(
+  assessmentIds: string[]
+): Promise<Record<string, NutritionPlanFull>> {
+  const supabase = await createClient();
+
   if (assessmentIds.length === 0) return {};
 
   const { data: plans, error } = await supabase
