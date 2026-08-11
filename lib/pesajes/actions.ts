@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireProfile } from "@/lib/auth/session";
-import { weighInBatchSchema, type WeighInEntry } from "@/lib/validation/weigh-in";
+import { weighInBatchSchema, weighInUpdateSchema, type WeighInEntry, type WeighInUpdate } from "@/lib/validation/weigh-in";
 
 /**
  * Alta en lote: un mismo recorded_at para todo el lote (el momento del
@@ -43,4 +43,37 @@ export async function recordDailyWeighIns(
 
   revalidatePath("/pesajes");
   return { count: rows.length };
+}
+
+/**
+ * Corrección de un pesaje ya registrado: UPDATE por `id` (nunca por
+ * jugador+fecha, ver weighInUpdateSchema). Solo toca weight_kg -- no
+ * recorded_at ni recorded_by: corregir un valor no debería cambiar cuándo
+ * (ni quién) quedó registrado originalmente, y la tabla no tiene columnas
+ * de auditoría de edición (updated_at/updated_by) para reflejar eso de
+ * todas formas. Misma policy RLS "staff update weigh_ins"
+ * (admin/nutricionista) que ya exige esto a nivel de base de datos -- sin
+ * chequeo de rol acá, mismo criterio que recordDailyWeighIns() arriba.
+ */
+export async function updateDailyWeighIn(
+  input: WeighInUpdate
+): Promise<{ error?: string }> {
+  const parsed = weighInUpdateSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+
+  const { supabase } = await requireProfile();
+
+  const { error } = await supabase
+    .from("daily_weigh_ins")
+    .update({ weight_kg: parsed.data.weight_kg })
+    .eq("id", parsed.data.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/pesajes");
+  return {};
 }

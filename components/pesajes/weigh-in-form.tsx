@@ -6,18 +6,21 @@ import { FilterSelect } from "@/components/ui/filter-select";
 import { MobileCardList } from "@/components/ui/mobile-card-list";
 import { NameSearchInput, normalizeSearchText } from "@/components/ui/name-search-input";
 import { formatIndicator } from "@/lib/format";
-import { recordDailyWeighIns } from "@/lib/pesajes/actions";
+import { recordDailyWeighIns, updateDailyWeighIn } from "@/lib/pesajes/actions";
 import type { TodayWeighIn } from "@/lib/pesajes/queries";
 import type { ReportPlayer } from "@/lib/dashboard/report-queries";
 
 type CatalogOption = { id: string; name: string };
+type SaveResult = { error?: string } | undefined;
 
 /**
  * Tabla de roster (Nombre, Posición) por categoría, con filtro por nombre
  * (mismo componente/lógica que PlayersTable en /jugadores) y registro de
  * peso inline por fila -- sin lote: cada fila guarda su propio pesaje al
  * confirmarlo, con recorded_at = now() puesto por el servidor, sin campo
- * de fecha visible.
+ * de fecha visible. Los pesajes de hoy ya registrados se listan junto al
+ * nombre (puede haber más de uno, ej. entreno + partido) y cada uno es
+ * clickable para corregirlo individualmente por su `id`.
  */
 export function WeighInForm({
   categories,
@@ -32,12 +35,16 @@ export function WeighInForm({
   const [categoryId, setCategoryId] = useState("");
   const [search, setSearch] = useState("");
 
-  // Ascendente por fecha (ver listTodaysWeighIns): el último de cada
-  // jugador en el Map es el más reciente.
-  const latestTodayByPlayer = useMemo(() => {
-    const map = new Map<string, TodayWeighIn>();
+  // Todos los de hoy por jugador, no solo el último -- ver WeighInEntryItem.
+  const todayEntriesByPlayer = useMemo(() => {
+    const map = new Map<string, TodayWeighIn[]>();
     for (const entry of todaysWeighIns) {
-      map.set(entry.player_id, entry);
+      const list = map.get(entry.player_id);
+      if (list) {
+        list.push(entry);
+      } else {
+        map.set(entry.player_id, [entry]);
+      }
     }
     return map;
   }, [todaysWeighIns]);
@@ -54,8 +61,8 @@ export function WeighInForm({
   }, [rosterPlayers, search]);
 
   function handleSaved() {
-    // Refresca todaysWeighIns (Server Component) para que el aviso "Ya
-    // registrado hoy" se actualice tras guardar una fila.
+    // Refresca todaysWeighIns (Server Component) para que los avisos "Ya
+    // registrado" reflejen el alta/corrección recién guardada.
     router.refresh();
   }
 
@@ -93,9 +100,15 @@ export function WeighInForm({
               <MobileCardList
                 rows={filteredPlayers}
                 keyFor={(player) => player.id}
-                title={(player) => <PlayerNameCell player={player} todayEntry={latestTodayByPlayer.get(player.id)} />}
+                title={(player) => (
+                  <PlayerNameCell
+                    player={player}
+                    todayEntries={todayEntriesByPlayer.get(player.id) ?? []}
+                    onSaved={handleSaved}
+                  />
+                )}
                 fields={[{ label: "Posición", render: (player) => player.position?.name ?? "—" }]}
-                actions={(player) => <WeighInRowControl player={player} onSaved={handleSaved} />}
+                actions={(player) => <NewWeighInControl player={player} onSaved={handleSaved} />}
               />
 
               <div className="hidden overflow-x-auto rounded-lg border border-border bg-surface sm:block">
@@ -111,11 +124,15 @@ export function WeighInForm({
                     {filteredPlayers.map((player) => (
                       <tr key={player.id} className="border-b border-border last:border-0">
                         <td className="px-4 py-3">
-                          <PlayerNameCell player={player} todayEntry={latestTodayByPlayer.get(player.id)} />
+                          <PlayerNameCell
+                            player={player}
+                            todayEntries={todayEntriesByPlayer.get(player.id) ?? []}
+                            onSaved={handleSaved}
+                          />
                         </td>
                         <td className="px-4 py-3 text-muted">{player.position?.name ?? "—"}</td>
                         <td className="px-4 py-3 text-right">
-                          <WeighInRowControl player={player} onSaved={handleSaved} />
+                          <NewWeighInControl player={player} onSaved={handleSaved} />
                         </td>
                       </tr>
                     ))}
@@ -130,55 +147,92 @@ export function WeighInForm({
   );
 }
 
-function PlayerNameCell({ player, todayEntry }: { player: ReportPlayer; todayEntry: TodayWeighIn | undefined }) {
+function PlayerNameCell({
+  player,
+  todayEntries,
+  onSaved,
+}: {
+  player: ReportPlayer;
+  todayEntries: TodayWeighIn[];
+  onSaved: () => void;
+}) {
   return (
     <div className="min-w-0">
       <p className="truncate font-medium text-foreground">{player.full_name}</p>
-      {todayEntry && (
-        <p className="text-xs text-muted">
-          Ya registrado: {formatIndicator(todayEntry.weight_kg, 1, " kg")} hoy ({formatWeighInTime(todayEntry.recorded_at)})
-        </p>
-      )}
+      {todayEntries.map((entry) => (
+        <WeighInEntryItem key={entry.id} entry={entry} playerName={player.full_name} onSaved={onSaved} />
+      ))}
     </div>
   );
 }
 
 /**
- * "+" habilita un input inline + botón de guardar, en la misma fila --
- * ver spec: sin panel lateral para un solo campo, sin botón de lote.
- * Guardado individual: llama a recordDailyWeighIns() con un solo registro
- * (la Server Action sigue aceptando un arreglo, acá siempre de longitud 1).
+ * Un pesaje de hoy ya registrado, mostrado como texto clickable ("Ya
+ * registrado: 74.3 kg hoy (HH:mm)"). Al clickearlo habilita el mismo
+ * input inline que el alta nueva, precargado con el valor actual, pero
+ * llama a updateDailyWeighIn() (UPDATE por id) en vez de crear un
+ * registro nuevo. Si hay varios pesajes del jugador hoy, cada uno es su
+ * propia instancia de este componente -- independiente de los demás.
  */
-function WeighInRowControl({ player, onSaved }: { player: ReportPlayer; onSaved: () => void }) {
+function WeighInEntryItem({
+  entry,
+  playerName,
+  onSaved,
+}: {
+  entry: TodayWeighIn;
+  playerName: string;
+  onSaved: () => void;
+}) {
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
 
-  function handleCancel() {
+  async function handleSave(weight: number): Promise<SaveResult> {
+    const result = await updateDailyWeighIn({ id: entry.id, weight_kg: weight });
+    if (result?.error) return result;
     setEditing(false);
-    setValue("");
-    setError(null);
+    onSaved();
+    return undefined;
   }
 
-  function handleSave() {
-    const weight = Number(value.trim());
-    if (!value.trim() || !Number.isFinite(weight) || weight <= 0) {
-      setError("Peso inválido.");
-      return;
-    }
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="block text-xs text-muted hover:text-foreground hover:underline"
+      >
+        Ya registrado: {formatIndicator(entry.weight_kg, 1, " kg")} hoy ({formatWeighInTime(entry.recorded_at)})
+      </button>
+    );
+  }
 
-    startTransition(async () => {
-      const result = await recordDailyWeighIns([{ player_id: player.id, weight_kg: weight }]);
-      if (result?.error) {
-        setError(result.error);
-        return;
-      }
-      setEditing(false);
-      setValue("");
-      setError(null);
-      onSaved();
-    });
+  return (
+    <div className="mt-1">
+      <WeightInlineControl
+        initialValue={String(entry.weight_kg)}
+        ariaLabelSuffix={`de ${playerName}`}
+        onSave={handleSave}
+        onCancel={() => setEditing(false)}
+      />
+    </div>
+  );
+}
+
+/**
+ * "+" habilita el mismo input inline, vacío, para dar de alta un pesaje
+ * nuevo -- ver spec: sin panel lateral para un solo campo, sin botón de
+ * lote. Guardado individual: llama a recordDailyWeighIns() con un solo
+ * registro (la Server Action sigue aceptando un arreglo, acá siempre de
+ * longitud 1).
+ */
+function NewWeighInControl({ player, onSaved }: { player: ReportPlayer; onSaved: () => void }) {
+  const [editing, setEditing] = useState(false);
+
+  async function handleSave(weight: number): Promise<SaveResult> {
+    const result = await recordDailyWeighIns([{ player_id: player.id, weight_kg: weight }]);
+    if (result?.error) return result;
+    setEditing(false);
+    onSaved();
+    return undefined;
   }
 
   if (!editing) {
@@ -192,6 +246,50 @@ function WeighInRowControl({ player, onSaved }: { player: ReportPlayer; onSaved:
         +
       </button>
     );
+  }
+
+  return (
+    <WeightInlineControl
+      ariaLabelSuffix={`de ${player.full_name}`}
+      onSave={handleSave}
+      onCancel={() => setEditing(false)}
+    />
+  );
+}
+
+/**
+ * Input + ✓/× compartido entre alta nueva (NewWeighInControl) y
+ * corrección de un registro existente (WeighInEntryItem) -- mismo patrón
+ * visual en los dos casos, solo cambia qué hace `onSave`.
+ */
+function WeightInlineControl({
+  initialValue = "",
+  ariaLabelSuffix,
+  onSave,
+  onCancel,
+}: {
+  initialValue?: string;
+  ariaLabelSuffix: string;
+  onSave: (weight: number) => Promise<SaveResult>;
+  onCancel: () => void;
+}) {
+  const [value, setValue] = useState(initialValue);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function handleSave() {
+    const weight = Number(value.trim());
+    if (!value.trim() || !Number.isFinite(weight) || weight <= 0) {
+      setError("Peso inválido.");
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await onSave(weight);
+      if (result?.error) {
+        setError(result.error);
+      }
+    });
   }
 
   return (
@@ -211,20 +309,20 @@ function WeighInRowControl({ player, onSaved }: { player: ReportPlayer; onSaved:
           }}
           onKeyDown={(event) => {
             if (event.key === "Enter") handleSave();
-            if (event.key === "Escape") handleCancel();
+            if (event.key === "Escape") onCancel();
           }}
-          aria-label={`Peso de ${player.full_name}`}
+          aria-label={`Peso ${ariaLabelSuffix}`}
         />
         <button
           type="button"
           onClick={handleSave}
           disabled={isPending}
           className="btn-primary px-2.5"
-          aria-label={`Guardar peso de ${player.full_name}`}
+          aria-label={`Guardar peso ${ariaLabelSuffix}`}
         >
           {isPending ? "…" : "✓"}
         </button>
-        <button type="button" onClick={handleCancel} className="btn-secondary px-2.5" aria-label="Cancelar">
+        <button type="button" onClick={onCancel} className="btn-secondary px-2.5" aria-label="Cancelar">
           ×
         </button>
       </div>

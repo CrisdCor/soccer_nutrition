@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 export type TodayWeighIn = {
+  id: string;
   player_id: string;
   weight_kg: number;
   recorded_at: string;
@@ -29,10 +30,10 @@ function getTodayRangeBogota(): { startIso: string; endIso: string } {
 
 /**
  * Todos los pesajes de HOY (día calendario en Bogotá), de cualquier
- * jugador. Ascendente por fecha, para que el último de cada jugador en el
- * cliente sea "el más reciente" -- se usa solo como referencia no
- * bloqueante junto al input de cada jugador (ver spec: pesar más de una
- * vez el mismo día es válido, ej. entreno + partido).
+ * jugador -- todos, no solo el último: un jugador puede tener más de uno
+ * (ej. entreno + partido) y cada uno se muestra y se edita por separado
+ * (por su `id`), ver WeighInForm. Ascendente por fecha (orden cronológico
+ * al mostrarlos).
  */
 export async function listTodaysWeighIns(): Promise<TodayWeighIn[]> {
   const supabase = await createClient();
@@ -40,7 +41,7 @@ export async function listTodaysWeighIns(): Promise<TodayWeighIn[]> {
 
   const { data, error } = await supabase
     .from("daily_weigh_ins")
-    .select("player_id, weight_kg, recorded_at")
+    .select("id, player_id, weight_kg, recorded_at")
     .gte("recorded_at", startIso)
     .lt("recorded_at", endIso)
     .order("recorded_at", { ascending: true });
