@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   createUserFormSchema,
   editUserFormSchema,
+  resetPasswordSchema,
   type CreateUserFormValues,
   type EditUserFormValues,
 } from "@/lib/validation/user";
@@ -102,4 +103,33 @@ export async function setUserStatus(userId: string, status: "active" | "inactive
   }
 
   revalidatePath("/usuarios");
+}
+
+/**
+ * Reset de contraseña sin flujo de email (equipo chico, admin resuelve el
+ * olvido directamente): misma Admin API y mismo createAdminClient() que
+ * createUser/setUserStatus arriba, sin duplicar el acceso a service_role.
+ * No hay redirect ni revalidatePath -- a diferencia de create/editar, acá
+ * no cambia nada que la UI ya esté mostrando (el modal se queda abierto
+ * para que el admin copie la contraseña antes de cerrar).
+ */
+export async function resetUserPassword(
+  userId: string,
+  values: { password: string }
+): Promise<{ error?: string }> {
+  const parsed = resetPasswordSchema.safeParse(values);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Contraseña inválida." };
+  }
+
+  await requireAdmin();
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(userId, { password: parsed.data.password });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return {};
 }

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { UserActionsMenu } from "@/components/usuarios/user-actions-menu";
 import { UserStatusToggle } from "@/components/usuarios/user-status-toggle";
 import { ROLE_LABELS } from "@/lib/auth/format";
 import type { UserRow } from "@/lib/usuarios/queries";
@@ -41,9 +41,7 @@ export function UsersTable({ users, currentUserId }: { users: UserRow[]; current
                 <td className="px-4 py-3 text-muted">{user.status === "active" ? "Activo" : "Inactivo"}</td>
                 <td className="data px-4 py-3 text-muted">{user.created_at.slice(0, 10)}</td>
                 <td className="px-4 py-3">
-                  <Link href={`/usuarios/${user.id}/editar`} className="btn-secondary">
-                    Editar
-                  </Link>
+                  <UserActionsMenu userId={user.id} userName={user.full_name} />
                 </td>
                 <td className="px-4 py-3 text-right">
                   {!isSelf && (

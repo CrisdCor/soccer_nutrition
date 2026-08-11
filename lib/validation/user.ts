@@ -15,3 +15,9 @@ export const editUserFormSchema = z.object({
 });
 
 export type EditUserFormValues = z.infer<typeof editUserFormSchema>;
+
+export const resetPasswordSchema = z.object({
+  password: z.string().min(8, "Mínimo 8 caracteres."),
+});
+
+export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
