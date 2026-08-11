@@ -1,14 +1,22 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { DateInput } from "@/components/ui/date-input";
 import { classifyByThreshold, formatIndicator, type ThresholdRange } from "@/lib/format";
+import {
+  getDateRangeBogota,
+  getTodayDateStringBogota,
+  subtractDaysFromDateString,
+  toBogotaDateString,
+} from "@/lib/pesajes/timezone";
 import type { WeighInRecord } from "@/lib/pesajes/queries";
 
 const RED = "#c8102e";
 const BLUE = "#1d3557";
 const BORDER = "#e4e4e7";
 const MUTED = "#71717a";
+const DEFAULT_RANGE_DAYS = 30;
 
 type ChartPoint = {
   recorded_at: string;
@@ -27,16 +35,55 @@ type ChartPoint = {
  * no al peso en sí -- no hay una ReferenceLine horizontal que tenga
  * sentido; la señal es el punto mismo: más grande y rojo si ese cambio
  * excede el umbral configurado, azul/normal si no.
+ *
+ * Filtro desde/hasta (mismo DateInput que Pesajes): default a los últimos
+ * 30 días, o el historial completo si el jugador tiene menos -- todo
+ * client-side sobre `weighIns` (ya viene completo del servidor, sin
+ * refetch por rango). El % de cambio se recalcula DESPUÉS de filtrar, así
+ * que compara contra el anterior dentro del rango, nunca contra uno fuera.
  */
 export function PlayerWeighInsTab({
   weighIns,
   threshold,
 }: {
-  /** Ascendente por recorded_at. */
+  /** Ascendente por recorded_at, historial completo del jugador. */
   weighIns: WeighInRecord[];
   threshold: ThresholdRange | null;
 }) {
-  const data = useMemo(() => buildChartData(weighIns, threshold), [weighIns, threshold]);
+  const today = useMemo(() => getTodayDateStringBogota(), []);
+
+  const defaultRange = useMemo(() => {
+    if (weighIns.length === 0) return { from: today, to: today };
+    const earliest = toBogotaDateString(weighIns[0].recorded_at);
+    const thirtyDaysAgo = subtractDaysFromDateString(today, DEFAULT_RANGE_DAYS - 1);
+    // El más reciente entre "hace 30 días" y el primer registro -- si hay
+    // menos de 30 días de historial, el default es todo el historial.
+    return { from: earliest > thirtyDaysAgo ? earliest : thirtyDaysAgo, to: today };
+  }, [weighIns, today]);
+
+  const [from, setFrom] = useState(defaultRange.from);
+  const [to, setTo] = useState(defaultRange.to);
+
+  const filteredWeighIns = useMemo(() => {
+    if (weighIns.length === 0) return [];
+    const { startIso } = getDateRangeBogota(from);
+    const { endIso: endOfToIso } = getDateRangeBogota(to);
+    // Comparación por instante real (Date), no por string: recorded_at
+    // puede venir serializado distinto de nuestro toISOString() (ej. con
+    // "+00:00" en vez de "Z"), y una comparación de strings ahí no es
+    // confiable.
+    const startMs = new Date(startIso).getTime();
+    const endMs = new Date(endOfToIso).getTime();
+    return weighIns.filter((entry) => {
+      const ms = new Date(entry.recorded_at).getTime();
+      return ms >= startMs && ms < endMs;
+    });
+  }, [weighIns, from, to]);
+
+  // Se calcula sobre `filteredWeighIns`, no sobre `weighIns`: el % de
+  // cambio de cada punto compara contra el anterior DENTRO del rango
+  // elegido, nunca contra uno que quedó fuera al filtrar.
+  const data = useMemo(() => buildChartData(filteredWeighIns, threshold), [filteredWeighIns, threshold]);
 
   if (weighIns.length === 0) {
     return (
@@ -50,9 +97,14 @@ export function PlayerWeighInsTab({
 
   return (
     <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <DateInput label="Desde" aria-label="Desde" value={from} max={to} onChange={setFrom} />
+        <DateInput label="Hasta" aria-label="Hasta" value={to} min={from} max={today} onChange={setTo} />
+      </div>
+
       <div className="rounded-lg border border-border p-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
-          <h4 className="text-sm font-semibold text-foreground">Peso diario -- todos los registros</h4>
+          <h4 className="text-sm font-semibold text-foreground">Peso diario</h4>
           <p className="text-xs text-muted">
             {threshold ? (
               <>
@@ -64,39 +116,46 @@ export function PlayerWeighInsTab({
             )}
           </p>
         </div>
-        <div style={{ height: 340 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 56 }}>
-              <CartesianGrid stroke={BORDER} vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 10, fill: MUTED }}
-                angle={-40}
-                textAnchor="end"
-                interval={0}
-                height={70}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: MUTED }}
-                domain={["dataMin - 1", "dataMax + 1"]}
-                unit=" kg"
-              />
-              <Tooltip content={<WeighInTooltip />} />
-              {/* connectNulls no aplica acá: weight_kg siempre viene con
-                  dato (columna NOT NULL en daily_weigh_ins), a diferencia
-                  del AKS que puede faltar por valoración incompleta. */}
-              <Line
-                type="monotone"
-                dataKey="weight_kg"
-                name="Peso"
-                stroke={BLUE}
-                strokeWidth={2}
-                dot={renderDot}
-                activeDot={{ r: 5 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+
+        {data.length === 0 ? (
+          <div className="flex h-40 items-center justify-center text-sm text-muted">
+            No hay pesajes en el rango seleccionado.
+          </div>
+        ) : (
+          <div style={{ height: 340 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 56 }}>
+                <CartesianGrid stroke={BORDER} vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: MUTED }}
+                  angle={-40}
+                  textAnchor="end"
+                  interval={0}
+                  height={70}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: MUTED }}
+                  domain={["dataMin - 1", "dataMax + 1"]}
+                  unit=" kg"
+                />
+                <Tooltip content={<WeighInTooltip />} />
+                {/* connectNulls no aplica acá: weight_kg siempre viene con
+                    dato (columna NOT NULL en daily_weigh_ins), a diferencia
+                    del AKS que puede faltar por valoración incompleta. */}
+                <Line
+                  type="monotone"
+                  dataKey="weight_kg"
+                  name="Peso"
+                  stroke={BLUE}
+                  strokeWidth={2}
+                  dot={renderDot}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
     </div>
   );

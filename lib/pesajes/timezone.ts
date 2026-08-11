@@ -18,13 +18,32 @@ function parseDateString(dateStr: string): [number, number, number] {
   return [Number(y), Number(m), Number(d)];
 }
 
+/** "YYYY-MM-DD" del día calendario en Bogotá al que corresponde un instante. */
+export function toBogotaDateString(isoOrMs: string | number): string {
+  const instantMs = typeof isoOrMs === "string" ? new Date(isoOrMs).getTime() : isoOrMs;
+  const bogota = new Date(instantMs - BOGOTA_OFFSET_MS);
+  const y = bogota.getUTCFullYear();
+  const m = String(bogota.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(bogota.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 /** "YYYY-MM-DD" de hoy, en Bogotá -- default del selector de fecha. */
 export function getTodayDateStringBogota(): string {
-  const bogotaNow = new Date(Date.now() - BOGOTA_OFFSET_MS);
-  const y = bogotaNow.getUTCFullYear();
-  const m = String(bogotaNow.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(bogotaNow.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  return toBogotaDateString(Date.now());
+}
+
+/**
+ * `dateStr` menos `days` días de calendario -- aritmética pura sobre
+ * Y-M-D (no sobre el instante real), para no arrastrar el offset de
+ * Bogotá acá: da igual en qué huso corra esto, "N días de calendario
+ * antes" es lo mismo en cualquiera.
+ */
+export function subtractDaysFromDateString(dateStr: string, days: number): string {
+  const [y, m, d] = parseDateString(dateStr);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCDate(date.getUTCDate() - days);
+  return date.toISOString().slice(0, 10);
 }
 
 /** Ventana [inicio, fin) en UTC de un día calendario en Bogotá. */

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { DateInput } from "@/components/ui/date-input";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { MobileCardList } from "@/components/ui/mobile-card-list";
 import { NameSearchInput, normalizeSearchText } from "@/components/ui/name-search-input";
@@ -95,17 +96,13 @@ export function WeighInForm({
           options={categories.map((category) => ({ value: category.id, label: category.name }))}
         />
 
-        <label className="flex items-center gap-2 text-sm text-muted">
-          Fecha
-          <input
-            type="date"
-            className="input w-auto"
-            value={date}
-            max={today}
-            onChange={(event) => event.target.value && handleDateChange(event.target.value)}
-            aria-label="Fecha de los pesajes"
-          />
-        </label>
+        <DateInput
+          label="Fecha"
+          aria-label="Fecha de los pesajes"
+          value={date}
+          max={today}
+          onChange={handleDateChange}
+        />
         {isNavigating && <span className="text-xs text-muted">Cargando…</span>}
       </div>
 
