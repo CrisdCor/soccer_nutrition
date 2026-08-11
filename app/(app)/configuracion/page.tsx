@@ -13,6 +13,7 @@ import { listDietTypes, listFoodGroups, listThresholds } from "@/lib/configuraci
 const METRIC_LABELS: Record<string, string> = {
   skinfold_sum: "Suma 6 Pliegues",
   aks_index: "AKS",
+  weight_change_pct: "Variación de Peso (%)",
 };
 
 export default async function ConfiguracionPage() {
@@ -44,7 +45,8 @@ export default async function ConfiguracionPage() {
         <div>
           <h3 className="text-sm font-semibold text-foreground">Umbrales de referencia</h3>
           <p className="text-sm text-muted">
-            Suma 6 Pliegues y AKS, por organización. No editables una vez guardados: una nueva
+            Suma 6 Pliegues, AKS y Variación de Peso (día a día, usado en el tab &ldquo;Peso Diario&rdquo; del
+            perfil de jugador), por organización. No editables una vez guardados: una nueva
             vigencia se agrega como fila nueva, conservando el histórico. Solo admin puede agregar.
           </p>
         </div>

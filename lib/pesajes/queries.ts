@@ -30,3 +30,22 @@ export async function listWeighInsForDate(dateStr: string): Promise<WeighInRecor
   if (error) throw error;
   return data ?? [];
 }
+
+/**
+ * Todo el historial de pesajes de UN jugador (sin filtrar por fecha), para
+ * el tab "Peso Diario" del perfil -- ascendente por recorded_at, incluye
+ * más de un registro el mismo día tal cual (entreno + partido): el
+ * gráfico de fluctuación necesita verlos todos, no solo "uno por día".
+ */
+export async function listWeighInsByPlayer(playerId: string): Promise<WeighInRecord[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("daily_weigh_ins")
+    .select("id, player_id, weight_kg, recorded_at")
+    .eq("player_id", playerId)
+    .order("recorded_at", { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}

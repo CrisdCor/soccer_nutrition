@@ -8,6 +8,7 @@ import { getCurrentThresholds, listDietTypes, listFoodGroups } from "@/lib/confi
 import { formatIndicator, formatPercentage } from "@/lib/format";
 import { getPlayerById, getPlayerPhotoUrl } from "@/lib/jugadores/queries";
 import { getNutritionPlansByPlayer, listMealTypes } from "@/lib/nutricion/queries";
+import { listWeighInsByPlayer } from "@/lib/pesajes/queries";
 import { listAssessmentsByPlayer } from "@/lib/valoraciones/queries";
 
 export default async function PlayerDetailPage({
@@ -16,7 +17,7 @@ export default async function PlayerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [player, assessments, thresholds, dietTypes, foodGroups, mealTypes, nutritionPlansByAssessment] =
+  const [player, assessments, thresholds, dietTypes, foodGroups, mealTypes, nutritionPlansByAssessment, weighIns] =
     await Promise.all([
       getPlayerById(id),
       listAssessmentsByPlayer(id),
@@ -25,6 +26,7 @@ export default async function PlayerDetailPage({
       listFoodGroups({ activeOnly: true }),
       listMealTypes(),
       getNutritionPlansByPlayer(id),
+      listWeighInsByPlayer(id),
     ]);
 
   if (!player) {
@@ -98,6 +100,8 @@ export default async function PlayerDetailPage({
         dietTypes={dietTypes}
         foodGroups={foodGroups}
         mealTypes={mealTypes}
+        weighIns={weighIns}
+        weighInThreshold={thresholds.weight_change_pct}
       />
     </div>
   );

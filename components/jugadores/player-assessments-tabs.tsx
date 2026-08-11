@@ -4,24 +4,29 @@ import { useState } from "react";
 import * as Tabs from "@/components/ui/tabs";
 import { PlayerAssessmentsTable } from "@/components/jugadores/player-assessments-table";
 import { PlayerNutritionPlanTab } from "@/components/jugadores/player-nutrition-plan-tab";
+import { PlayerWeighInsTab } from "@/components/jugadores/player-weigh-ins-tab";
 import { AssessmentFormSheet } from "@/components/valoraciones/assessment-form-sheet";
 import { NutritionPlanSheet } from "@/components/nutricion/nutrition-plan-sheet";
 import type { AssessmentDetailFields } from "@/components/valoraciones/assessment-detail-groups";
 import { useUserProfile } from "@/lib/auth/user-profile-context";
 import type { ThresholdRange } from "@/lib/format";
 import type { NutritionPlanFull } from "@/lib/nutricion/queries";
+import type { WeighInRecord } from "@/lib/pesajes/queries";
 
 type Assessment = AssessmentDetailFields & { id: string; assessment_date: string; label: string };
 type CatalogOption = { id: string; name: string };
 type MealType = { id: number; name: string; sort_order: number };
 
 /**
- * Dos pestañas del perfil de jugador:
+ * Tres pestañas del perfil de jugador:
  *  - "Valoraciones": solo la tabla comparativa (el gráfico de evolución se
  *    retiró de acá).
  *  - "Plan Nutricional": lectura + selector de valoración, ver
  *    PlayerNutritionPlanTab.
- * Ambas acciones del encabezado ("Nueva valoración" y "Crear
+ *  - "Peso Diario": daily_weigh_ins (independiente de assessments), ver
+ *    PlayerWeighInsTab -- se registran desde /pesajes, acá solo se
+ *    visualizan.
+ * Las acciones del encabezado ("Nueva valoración" y "Crear
  * plan"/"Editar plan") abren paneles laterales en vez de navegar a
  * pantallas separadas -- ya no hay rutas standalone de valoraciones.
  */
@@ -35,6 +40,8 @@ export function PlayerAssessmentsTabs({
   dietTypes,
   foodGroups,
   mealTypes,
+  weighIns,
+  weighInThreshold,
 }: {
   playerId: string;
   playerSex: "Hombre" | "Mujer";
@@ -46,6 +53,9 @@ export function PlayerAssessmentsTabs({
   dietTypes: CatalogOption[];
   foodGroups: CatalogOption[];
   mealTypes: MealType[];
+  /** Ascendente por recorded_at. */
+  weighIns: WeighInRecord[];
+  weighInThreshold: ThresholdRange | null;
 }) {
   const { role } = useUserProfile();
   const isLider = role === "lider";
@@ -61,6 +71,7 @@ export function PlayerAssessmentsTabs({
         <Tabs.List>
           <Tabs.Trigger value="valoraciones">Valoraciones</Tabs.Trigger>
           <Tabs.Trigger value="plan-nutricional">Plan Nutricional</Tabs.Trigger>
+          <Tabs.Trigger value="peso-diario">Peso Diario</Tabs.Trigger>
         </Tabs.List>
 
         {!isLider && (
@@ -107,6 +118,10 @@ export function PlayerAssessmentsTabs({
           foodGroups={foodGroups}
           mealTypes={mealTypes}
         />
+      </Tabs.Content>
+
+      <Tabs.Content value="peso-diario" className="pt-4">
+        <PlayerWeighInsTab weighIns={weighIns} threshold={weighInThreshold} />
       </Tabs.Content>
 
       <AssessmentFormSheet mode="create" playerId={playerId} open={newAssessmentOpen} onOpenChange={setNewAssessmentOpen} />
