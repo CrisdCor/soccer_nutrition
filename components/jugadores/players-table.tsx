@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { PlayerStatusToggle } from "@/components/jugadores/player-status-toggle";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { MobileCardList } from "@/components/ui/mobile-card-list";
+import { NameSearchInput, normalizeSearchText } from "@/components/ui/name-search-input";
 import { computeDisplayAge } from "@/lib/calculations";
 
 type PlayerRow = {
@@ -20,15 +21,6 @@ type PlayerRow = {
 };
 
 const ALL = "__all__";
-
-// Sin acentos/mayúsculas: para que "jose" encuentre "José" -- normalize()
-// separa los diacríticos en marcas combinables (\p{Diacritic}) y las quita.
-function normalize(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase();
-}
 
 export function PlayersTable({ players }: { players: PlayerRow[] }) {
   const [search, setSearch] = useState("");
@@ -46,9 +38,9 @@ export function PlayersTable({ players }: { players: PlayerRow[] }) {
   );
 
   const filtered = useMemo(() => {
-    const needle = normalize(search.trim());
+    const needle = normalizeSearchText(search.trim());
     return players.filter((player) => {
-      if (needle && !normalize(player.full_name).includes(needle)) return false;
+      if (needle && !normalizeSearchText(player.full_name).includes(needle)) return false;
       if (category !== ALL && player.category?.name !== category) return false;
       if (position !== ALL && player.position?.name !== position) return false;
       if (sex !== ALL && player.sex !== sex) return false;
@@ -70,13 +62,7 @@ export function PlayersTable({ players }: { players: PlayerRow[] }) {
     <div className="space-y-3">
       {/* Scroll horizontal en mobile en vez de wrap -- ver DashboardFilterBar. */}
       <div className="flex gap-3 overflow-x-auto pb-1 [&>*]:shrink-0 sm:flex-wrap sm:overflow-visible sm:pb-0">
-        <input
-          type="text"
-          className="input max-w-xs"
-          placeholder="Buscar por nombre…"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
+        <NameSearchInput value={search} onChange={setSearch} />
         <FilterSelect
           aria-label="Filtrar por categoría"
           value={category}
