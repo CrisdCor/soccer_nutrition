@@ -2,13 +2,24 @@
 
 import { revalidatePath } from "next/cache";
 import { requireProfile } from "@/lib/auth/session";
-import { weighInBatchSchema, weighInUpdateSchema, type WeighInEntry, type WeighInUpdate } from "@/lib/validation/weigh-in";
+import { buildRecordedAtForDate } from "@/lib/pesajes/timezone";
+import {
+  weighInBatchRequestSchema,
+  weighInDeleteSchema,
+  weighInUpdateSchema,
+  type WeighInBatchRequest,
+  type WeighInDelete,
+  type WeighInUpdate,
+} from "@/lib/validation/weigh-in";
 
 /**
  * Alta en lote: un mismo recorded_at para todo el lote (el momento del
  * guardado), no uno por jugador -- así todos los pesajes de esta pasada
  * quedan agrupados como "la misma sesión", sin importar el orden en que se
- * tipearon.
+ * tipearon. `date` es la fecha activa en el selector de la pantalla (no
+ * siempre "hoy": puede ser un pesaje de un día anterior que se les pasó) --
+ * recorded_at combina esa fecha con la hora real actual, ver
+ * lib/pesajes/timezone.ts#buildRecordedAtForDate.
  *
  * Sin revisar el rol acá a propósito: la policy RLS "staff insert
  * weigh_ins" (admin/nutricionista) ya lo exige a nivel de base de datos,
@@ -18,17 +29,17 @@ import { weighInBatchSchema, weighInUpdateSchema, type WeighInEntry, type WeighI
  * formulario.
  */
 export async function recordDailyWeighIns(
-  entries: WeighInEntry[]
+  input: WeighInBatchRequest
 ): Promise<{ error?: string; count?: number }> {
-  const parsed = weighInBatchSchema.safeParse(entries);
+  const parsed = weighInBatchRequestSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   }
 
   const { supabase, profile } = await requireProfile();
-  const recordedAt = new Date().toISOString();
+  const recordedAt = buildRecordedAtForDate(parsed.data.date);
 
-  const rows = parsed.data.map((entry) => ({
+  const rows = parsed.data.entries.map((entry) => ({
     organization_id: profile.organization_id,
     player_id: entry.player_id,
     weight_kg: entry.weight_kg,
@@ -70,6 +81,32 @@ export async function updateDailyWeighIn(
     .update({ weight_kg: parsed.data.weight_kg })
     .eq("id", parsed.data.id);
 
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/pesajes");
+  return {};
+}
+
+/**
+ * Borrado de un pesaje puntual, por `id`. Irreversible (DELETE físico de
+ * verdad -- el resto de la app nunca borra filas, solo cambia `status`,
+ * ver setPlayerStatus/setUserStatus; acá sí porque un pesaje mal tipeado
+ * no tiene un estado "inactivo" razonable, es simplemente un dato erróneo
+ * que no debería quedar). La confirmación en dos pasos vive en la UI
+ * (WeighInForm), no acá. Misma policy RLS "staff delete weigh_ins"
+ * (admin/nutricionista) que ya lo exige a nivel de base de datos.
+ */
+export async function deleteDailyWeighIn(input: WeighInDelete): Promise<{ error?: string }> {
+  const parsed = weighInDeleteSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+
+  const { supabase } = await requireProfile();
+
+  const { error } = await supabase.from("daily_weigh_ins").delete().eq("id", parsed.data.id);
   if (error) {
     return { error: error.message };
   }
