@@ -15,6 +15,10 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 // sin chequeo de rol).
 const PUBLIC_ROUTES = ["/login"];
 const ADMIN_ROUTE_PREFIXES = ["/usuarios", "/catalogos"];
+// Pesajes (daily_weigh_ins): solo quien registra puede entrar, igual que la
+// policy RLS "staff insert weigh_ins" (admin/nutricionista) -- lider es de
+// solo lectura en toda la app y jugador ni siquiera debería ver el módulo.
+const STAFF_WRITE_ROUTE_PREFIXES = ["/pesajes"];
 
 // role = 'lider' es de solo lectura en toda la app (RLS ya lo bloquea a
 // nivel de escritura). Crear/editar jugador son las únicas rutas de
@@ -81,6 +85,22 @@ export async function proxy(request: NextRequest) {
       .single();
 
     if (profile?.role !== "admin") {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/dashboard";
+      redirectUrl.search = "";
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
+  // 3b) Rutas de solo admin/nutricionista (staff que registra pesajes).
+  if (user && STAFF_WRITE_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role !== "admin" && profile?.role !== "nutricionista") {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/dashboard";
       redirectUrl.search = "";

@@ -27,6 +27,7 @@ const USUARIOS_ITEM = { label: "Usuarios", href: "/usuarios" };
 export function BottomNav() {
   const pathname = usePathname();
   const { full_name, role } = useUserProfile();
+  const isStaff = role === "admin" || role === "nutricionista";
 
   const moreItems = role === "admin" ? [...MORE_ITEMS_BASE, USUARIOS_ITEM] : MORE_ITEMS_BASE;
 
@@ -37,6 +38,13 @@ export function BottomNav() {
     >
       <NavLink href="/dashboard" label="Dashboard" active={pathname.startsWith("/dashboard")} icon={<DashboardIcon />} />
       <NavLink href="/jugadores" label="Jugadores" active={pathname.startsWith("/jugadores")} icon={<PlayersIcon />} />
+      {/* Quinta posición condicional (rompe los "4 fijos" a propósito):
+          registro de peso es justo el caso de uso "celular en la cancha"
+          que el BottomNav existe para servir -- no tiene sentido
+          esconderlo en el drawer "Más". Solo admin/nutricionista. */}
+      {isStaff && (
+        <NavLink href="/pesajes" label="Pesajes" active={pathname.startsWith("/pesajes")} icon={<WeighInIcon />} />
+      )}
 
       <MoreMenuDrawer
         items={moreItems}
@@ -95,6 +103,16 @@ function PlayersIcon() {
       <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
       <circle cx="17.5" cy="9.5" r="2.5" />
       <path d="M15.5 14.2c2.6.4 4.5 2.6 4.5 5.3" />
+    </svg>
+  );
+}
+
+function WeighInIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 12a3.5 3.5 0 0 1 7 0" />
+      <path d="M12 12v-2.5" />
     </svg>
   );
 }

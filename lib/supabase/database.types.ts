@@ -228,6 +228,58 @@ export type Database = {
           },
         ]
       }
+      daily_weigh_ins: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          player_id: string
+          recorded_at: string
+          recorded_by: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          player_id: string
+          recorded_at?: string
+          recorded_by: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          player_id?: string
+          recorded_at?: string
+          recorded_by?: string
+          weight_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_weigh_ins_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_weigh_ins_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_weigh_ins_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diet_types: {
         Row: {
           active: boolean
@@ -609,6 +661,61 @@ export type Database = {
           },
         ]
       }
+      portion_logs: {
+        Row: {
+          created_at: string
+          food_group_id: string
+          id: string
+          log_date: string
+          meal_type_id: number
+          nutrition_plan_id: string
+          portions_consumed: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          food_group_id: string
+          id?: string
+          log_date?: string
+          meal_type_id: number
+          nutrition_plan_id: string
+          portions_consumed?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          food_group_id?: string
+          id?: string
+          log_date?: string
+          meal_type_id?: number
+          nutrition_plan_id?: string
+          portions_consumed?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portion_logs_food_group_id_fkey"
+            columns: ["food_group_id"]
+            isOneToOne: false
+            referencedRelation: "food_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portion_logs_meal_type_id_fkey"
+            columns: ["meal_type_id"]
+            isOneToOne: false
+            referencedRelation: "meal_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portion_logs_nutrition_plan_id_fkey"
+            columns: ["nutrition_plan_id"]
+            isOneToOne: false
+            referencedRelation: "nutrition_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       positions: {
         Row: {
           active: boolean
@@ -713,6 +820,7 @@ export type Database = {
           full_name: string
           id: string
           organization_id: string
+          player_id: string | null
           role: Database["public"]["Enums"]["user_role"]
           status: Database["public"]["Enums"]["player_status"]
         }
@@ -721,6 +829,7 @@ export type Database = {
           full_name: string
           id: string
           organization_id: string
+          player_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           status?: Database["public"]["Enums"]["player_status"]
         }
@@ -729,6 +838,7 @@ export type Database = {
           full_name?: string
           id?: string
           organization_id?: string
+          player_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           status?: Database["public"]["Enums"]["player_status"]
         }
@@ -740,6 +850,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_profiles_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -748,6 +865,7 @@ export type Database = {
     }
     Functions: {
       current_user_org: { Args: never; Returns: string }
+      current_user_player_id: { Args: never; Returns: string }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
@@ -756,8 +874,8 @@ export type Database = {
     Enums: {
       player_sex: "Hombre" | "Mujer"
       player_status: "active" | "inactive"
-      threshold_metric: "skinfold_sum" | "aks_index"
-      user_role: "admin" | "nutricionista" | "lider"
+      threshold_metric: "skinfold_sum" | "aks_index" | "weight_change_pct"
+      user_role: "admin" | "nutricionista" | "lider" | "jugador"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -887,8 +1005,8 @@ export const Constants = {
     Enums: {
       player_sex: ["Hombre", "Mujer"],
       player_status: ["active", "inactive"],
-      threshold_metric: ["skinfold_sum", "aks_index"],
-      user_role: ["admin", "nutricionista", "lider"],
+      threshold_metric: ["skinfold_sum", "aks_index", "weight_change_pct"],
+      user_role: ["admin", "nutricionista", "lider", "jugador"],
     },
   },
 } as const

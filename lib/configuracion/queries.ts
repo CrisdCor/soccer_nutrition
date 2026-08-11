@@ -30,6 +30,12 @@ export async function getCurrentThresholds(): Promise<CurrentThresholds> {
 
   const result: CurrentThresholds = { skinfold_sum: null, aks_index: null };
   for (const row of data ?? []) {
+    // "weight_change_pct" existe en el enum de la base (para un futuro
+    // umbral de variación de peso sobre daily_weigh_ins) pero todavía no
+    // tiene UI/soporte en Configuración -- se ignora acá a propósito, no
+    // se agrega a CurrentThresholds sin ese trabajo.
+    if (row.metric !== "skinfold_sum" && row.metric !== "aks_index") continue;
+
     if (result[row.metric] === null) {
       result[row.metric] = { low_cut: row.low_cut, high_cut: row.high_cut };
     }

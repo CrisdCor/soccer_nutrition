@@ -9,14 +9,18 @@ type NavItem = {
   label: string;
   href: string;
   adminOnly?: boolean;
+  /** admin o nutricionista -- ni lider (solo lectura en toda la app) ni jugador. */
+  staffOnly?: boolean;
 };
 
 // Estructura de navegación del MVP (ver orden de prioridad de módulos).
-// "Usuarios" solo se muestra a role = 'admin' (el acceso real ya está
-// forzado por middleware.ts; esto es solo para no mostrar un enlace muerto).
+// "Usuarios"/"Catálogos" solo para role = 'admin'; "Pesajes" para
+// admin/nutricionista (staffOnly) -- el acceso real ya está forzado en
+// proxy.ts, esto es solo para no mostrar enlaces muertos.
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Jugadores", href: "/jugadores" },
+  { label: "Pesajes", href: "/pesajes", staffOnly: true },
   { label: "Catálogos", href: "/catalogos", adminOnly: true },
   { label: "Configuración", href: "/configuracion" },
   { label: "Usuarios", href: "/usuarios", adminOnly: true },
@@ -26,7 +30,11 @@ export function Sidebar() {
   const pathname = usePathname();
   const { role } = useUserProfile();
 
-  const items = NAV_ITEMS.filter((item) => !item.adminOnly || role === "admin");
+  const items = NAV_ITEMS.filter(
+    (item) =>
+      (!item.adminOnly || role === "admin") &&
+      (!item.staffOnly || role === "admin" || role === "nutricionista")
+  );
 
   return (
     <aside className="hidden sm:flex sm:w-60 sm:flex-col sm:border-r sm:border-border sm:bg-surface">
