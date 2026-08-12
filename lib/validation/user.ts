@@ -1,11 +1,21 @@
 import { z } from "zod";
 
-export const createUserFormSchema = z.object({
-  email: z.string().trim().min(1, "El correo es obligatorio.").email("Correo inválido."),
-  password: z.string().min(8, "Mínimo 8 caracteres."),
-  full_name: z.string().trim().min(1, "El nombre es obligatorio.").max(200),
-  role: z.enum(["admin", "nutricionista", "lider"], { message: "Selecciona el rol." }),
-});
+// player_id es obligatorio solo si role === 'jugador' (.refine en vez de
+// z.discriminatedUnion): el <select> de rol y el picker de jugador viven en
+// el mismo <form> sin remontarse al cambiar de rol, más simple con un solo
+// shape de campos que uno condicional.
+export const createUserFormSchema = z
+  .object({
+    email: z.string().trim().min(1, "El correo es obligatorio.").email("Correo inválido."),
+    password: z.string().min(8, "Mínimo 8 caracteres."),
+    full_name: z.string().trim().min(1, "El nombre es obligatorio.").max(200),
+    role: z.enum(["admin", "nutricionista", "lider", "jugador"], { message: "Selecciona el rol." }),
+    player_id: z.string().optional(),
+  })
+  .refine((data) => data.role !== "jugador" || Boolean(data.player_id), {
+    message: "Selecciona el jugador vinculado.",
+    path: ["player_id"],
+  });
 
 export type CreateUserFormValues = z.infer<typeof createUserFormSchema>;
 

@@ -28,6 +28,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     .eq("id", user.id)
     .single();
 
+  // role='jugador' tiene su propio shell (app/portal/layout.tsx): sin
+  // sidebar/BottomNav de staff, solo su propio estado y plan. Cubre TODAS
+  // las rutas bajo este layout de una sola vez (a diferencia de proxy.ts,
+  // que solo bloquea prefijos puntuales como /usuarios o /pesajes) --
+  // nunca hay que acordarse de sumar una ruta nueva a una lista aparte.
+  if (profile?.role === "jugador") {
+    redirect("/portal");
+  }
+
   if (!profile) {
     // El usuario existe en auth.users pero no tiene fila en user_profiles
     // (el trigger no corrió, o se creó a mano sin completarla). No

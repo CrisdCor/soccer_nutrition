@@ -2,15 +2,21 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Field } from "@/components/ui/field";
+import { PlayerLinkSelect } from "@/components/usuarios/player-link-select";
 import { createUserFormSchema, type CreateUserFormValues } from "@/lib/validation/user";
+
+type PlayerOption = { id: string; full_name: string };
 
 export function UserForm({
   organizationName,
+  players,
   action,
 }: {
   organizationName: string;
+  /** Jugadores activos sin cuenta vinculada todavía -- ver listLinkablePlayers(). */
+  players: PlayerOption[];
   action: (values: CreateUserFormValues) => Promise<{ error?: string } | void>;
 }) {
   const [formError, setFormError] = useState<string | null>(null);
@@ -18,11 +24,15 @@ export function UserForm({
   const {
     register,
     handleSubmit,
+    control,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserFormSchema),
-    defaultValues: { email: "", password: "", full_name: "", role: "nutricionista" },
+    defaultValues: { email: "", password: "", full_name: "", role: "nutricionista", player_id: "" },
   });
+
+  const role = watch("role");
 
   async function onSubmit(values: CreateUserFormValues) {
     setFormError(null);
@@ -61,8 +71,33 @@ export function UserForm({
           <option value="nutricionista">Nutricionista</option>
           <option value="admin">Admin</option>
           <option value="lider">Líder</option>
+          <option value="jugador">Jugador</option>
         </select>
       </Field>
+
+      {/* Solo para role='jugador' -- no un <Field> (el id que clonaría no
+          llega al input real dentro de PlayerLinkSelect, mismo criterio
+          que otros controles compuestos de la app, ver
+          ResetPasswordModal). */}
+      {role === "jugador" && (
+        <div className="space-y-1.5">
+          <p className="text-sm font-medium text-foreground">Jugador vinculado</p>
+          {players.length === 0 ? (
+            <p className="text-sm text-muted">
+              No hay jugadores activos sin cuenta vinculada todavía.
+            </p>
+          ) : (
+            <Controller
+              name="player_id"
+              control={control}
+              render={({ field }) => (
+                <PlayerLinkSelect players={players} value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
+          )}
+          {errors.player_id && <p className="text-xs text-brand-red">{errors.player_id.message}</p>}
+        </div>
+      )}
 
       {formError && (
         <p role="alert" className="rounded-md border border-border-strong px-3 py-2 text-sm text-foreground">

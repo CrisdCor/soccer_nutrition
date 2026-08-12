@@ -66,10 +66,18 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // 2) Con sesión intentando entrar a /login -> /dashboard
+  // 2) Con sesión intentando entrar a /login -> home según rol (jugador no
+  //    tiene nada que hacer en /dashboard, ver app/(app)/layout.tsx, que
+  //    redirige a /portal si de todas formas llega ahí).
   if (user && pathname === "/login") {
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/dashboard";
+    redirectUrl.pathname = profile?.role === "jugador" ? "/portal" : "/dashboard";
     redirectUrl.search = "";
     return NextResponse.redirect(redirectUrl);
   }

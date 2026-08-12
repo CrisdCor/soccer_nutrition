@@ -39,6 +39,10 @@ export async function createUser(values: CreateUserFormValues) {
       // Nunca se toma organization_id del formulario: siempre la del admin
       // que está creando el usuario (por ahora, la única organización).
       organization_id: profile.organization_id,
+      // Solo para role='jugador' -- el trigger handle_new_user ya lo toma
+      // de acá para user_profiles.player_id (validado por el .refine() de
+      // createUserFormSchema: siempre viene si role === 'jugador').
+      ...(parsed.role === "jugador" ? { player_id: parsed.player_id } : {}),
     },
   });
 

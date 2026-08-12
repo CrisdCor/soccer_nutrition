@@ -50,6 +50,29 @@ export async function getOrganizationName(organizationId: string): Promise<strin
   return data?.name ?? "—";
 }
 
+/**
+ * Jugadores activos que todavía no tienen una cuenta vinculada -- para el
+ * picker de "Jugador vinculado" al crear un usuario role='jugador'. Se
+ * excluyen los ya vinculados (cualquier user_profiles.player_id ya
+ * asignado) para no ofrecer crear una segunda cuenta para el mismo
+ * jugador por error; no hay constraint UNIQUE a nivel de base que lo
+ * impida, así que esto es la única barrera.
+ */
+export async function listLinkablePlayers(): Promise<{ id: string; full_name: string }[]> {
+  const supabase = await createClient();
+
+  const [{ data: players, error: playersError }, { data: linked, error: linkedError }] = await Promise.all([
+    supabase.from("players").select("id, full_name").eq("status", "active").order("full_name"),
+    supabase.from("user_profiles").select("player_id").not("player_id", "is", null),
+  ]);
+
+  if (playersError) throw playersError;
+  if (linkedError) throw linkedError;
+
+  const linkedIds = new Set((linked ?? []).map((row) => row.player_id));
+  return (players ?? []).filter((player) => !linkedIds.has(player.id));
+}
+
 export async function getUserRowById(id: string): Promise<UserRow | null> {
   const supabase = await createClient();
 

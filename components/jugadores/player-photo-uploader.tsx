@@ -18,9 +18,12 @@ type UploadState = { error?: string } | null;
  * hover-reveal de desktop ya cumple ese rol de ahí en adelante) para que
  * la acción sea descubrible sin depender de que alguien toque "a ciegas".
  *
- * `lider` ve la foto pero sin ninguna affordance de edición (ni el botón
- * clicable, ni el scrim, ni el ícono de esquina en mobile) -- la subida
- * fallaría igual bajo RLS, así que se degrada a un <div> puramente visual.
+ * `lider` y `jugador` ven la foto pero sin ninguna affordance de edición
+ * (ni el botón clicable, ni el scrim, ni el ícono de esquina en mobile) --
+ * la subida fallaría igual bajo RLS para ambos roles, así que se degrada a
+ * un <div> puramente visual. `jugador` además es quien ve su propia foto
+ * en el Portal (ver app/portal/page.tsx), donde este mismo componente se
+ * reutiliza sin cambios.
  */
 export function PlayerPhotoUploader({
   playerId,
@@ -44,7 +47,7 @@ export function PlayerPhotoUploader({
     }
   }, null);
 
-  if (role === "lider") {
+  if (role === "lider" || role === "jugador") {
     return (
       <div className="relative h-24 w-24 shrink-0">
         <div className="h-24 w-24 overflow-hidden rounded-full border border-border bg-background">
