@@ -61,7 +61,7 @@ export function PlayersTable({ players }: { players: PlayerRow[] }) {
   return (
     <div className="space-y-3">
       {/* Scroll horizontal en mobile en vez de wrap -- ver DashboardFilterBar. */}
-      <div className="flex gap-3 overflow-x-auto pb-1 [&>*]:shrink-0 sm:flex-wrap sm:overflow-visible sm:pb-0">
+      <div className="flex min-w-0 gap-3 overflow-x-auto pb-1 [&>*]:shrink-0 sm:flex-wrap sm:overflow-visible sm:pb-0">
         <NameSearchInput value={search} onChange={setSearch} />
         <FilterSelect
           aria-label="Filtrar por categoría"

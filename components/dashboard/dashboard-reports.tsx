@@ -40,8 +40,8 @@ export function DashboardReports({
   const valoracionOptions = useMemo(() => buildValoracionOptions(assessments), [assessments]);
 
   return (
-    <div className="flex h-[640px] flex-col gap-4 rounded-lg border border-border bg-surface p-4">
-      <Segmented.Root defaultValue="suma-pliegues" className="flex min-h-0 flex-1 flex-col gap-4">
+    <div className="flex h-[640px] min-w-0 flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+      <Segmented.Root defaultValue="suma-pliegues" className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
         <Segmented.List>
           <Segmented.Trigger value="suma-pliegues">Rep. Suma Pliegues</Segmented.Trigger>
           <Segmented.Trigger value="peso-mlg">Rep. Peso Corp. Mlg</Segmented.Trigger>

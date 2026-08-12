@@ -59,14 +59,26 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <UserProfileProvider profile={profile}>
-      <div className="flex h-full min-h-full">
+      {/* h-dvh (no h-full/vh) + overflow-x-hidden: ver el comentario en
+          app/layout.tsx -- BottomNav es fixed, así que depende de que esta
+          cadena de alturas nunca quede más alta que el viewport real. */}
+      <div className="flex h-dvh min-h-dvh overflow-x-hidden">
         <Sidebar />
-        <div className="flex min-h-full flex-1 flex-col">
+        {/* min-w-0: sin esto, un hijo con contenido más ancho que el
+            viewport (aunque tenga su propio overflow-x-auto) podría hacer
+            que este item de flex-row se niegue a encogerse y empuje el
+            overflow horizontal hacia el documento entero. */}
+        <div className="flex min-h-full min-w-0 flex-1 flex-col">
           <Header />
           {/* pb-20: espacio para que el BottomNav fijo (solo mobile) no
               tape el final del contenido; sm:pb-6 vuelve al padding
-              normal una vez que el BottomNav deja de mostrarse. */}
-          <main className="flex-1 overflow-y-auto p-4 pb-20 sm:p-6 sm:pb-6">{children}</main>
+              normal una vez que el BottomNav deja de mostrarse.
+              overflow-x-hidden explícito (no solo confiar en que
+              overflow-y-auto fuerce el otro eje a "auto" por spec, ver
+              components/dashboard/report-bar-chart.tsx): cualquier
+              contenido que se escape de un componente interno queda
+              recortado acá, nunca llega a scrollear la página completa. */}
+          <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 pb-20 sm:p-6 sm:pb-6">{children}</main>
         </div>
         <BottomNav />
       </div>
