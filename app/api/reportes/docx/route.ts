@@ -8,6 +8,7 @@ import { buildReportDocument } from "@/lib/docx/report-document";
 import type { ReportDocumentData, ReportPlayerData } from "@/lib/pdf/types";
 import {
   getCategoryReportPlayers,
+  getPlayerAksHistory,
   getPlayerPhotoDataUri,
   getPlayerReportAssessment,
 } from "@/lib/reportes/queries";
@@ -71,12 +72,16 @@ export async function GET(request: NextRequest) {
       return new Response("No se encontró una valoración con esa etiqueta para ese jugador.", { status: 404 });
     }
 
-    const plansByAssessment = await getNutritionPlansByAssessmentIds([pair.assessment.id]);
+    const [plansByAssessment, photoDataUri, aksHistory] = await Promise.all([
+      getNutritionPlansByAssessmentIds([pair.assessment.id]),
+      getPlayerPhotoDataUri(pair.player.photo_path),
+      getPlayerAksHistory(playerId),
+    ]);
     const player: ReportPlayerData = {
       player: pair.player,
       assessment: pair.assessment,
       plan: plansByAssessment[pair.assessment.id] ?? null,
-      photoDataUri: await getPlayerPhotoDataUri(pair.player.photo_path),
+      photoDataUri,
     };
 
     const data: ReportDocumentData = {
@@ -84,10 +89,10 @@ export async function GET(request: NextRequest) {
       mode: "individual",
       categoryName: pair.player.full_name,
       players: [player],
-      // El gráfico de evolución de AKS es solo del PDF individual en esta
-      // entrega (ver lib/pdf/aks-evolution-chart.tsx) -- el Word no lo
-      // requiere todavía.
-      aksHistory: null,
+      // Gráfico de evolución de AKS (ver lib/docx/aks-chart-image.ts):
+      // mismo dato que el PDF individual (getPlayerAksHistory), el propio
+      // player-section.ts lo omite si el jugador tiene una sola valoración.
+      aksHistory,
     };
 
     return renderDocxResponse(data, `informe-${slugify(pair.player.full_name)}-${slugify(valoracionLabel)}.docx`);
@@ -136,7 +141,8 @@ export async function GET(request: NextRequest) {
 }
 
 async function renderDocxResponse(data: ReportDocumentData, fileName: string): Promise<Response> {
-  const buffer = await Packer.toBuffer(buildReportDocument(data));
+  const document = await buildReportDocument(data);
+  const buffer = await Packer.toBuffer(document);
 
   return new Response(new Uint8Array(buffer), {
     headers: {

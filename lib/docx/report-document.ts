@@ -15,10 +15,11 @@ const PAGE_MARGIN_MM = 18;
  * mismo orden que ReportDocument en lib/pdf/report-document.tsx, reutilizando
  * exactamente los mismos datos (ReportDocumentData) que arma el Route
  * Handler para el PDF. Cada sub-builder (cover/group-table/player-section)
- * es el único lugar con lógica de layout de Word; ninguno vuelve a calcular
- * ni a consultar datos.
+ * es el único lugar con lógica de layout de Word; ninguno vuelve a consultar
+ * datos (async solo por player-section.ts, que rasteriza el gráfico de AKS
+ * a PNG con sharp -- ver lib/docx/aks-chart-image.ts).
  */
-export function buildReportDocument(data: ReportDocumentData): Document {
+export async function buildReportDocument(data: ReportDocumentData): Promise<Document> {
   const children: (Paragraph | Table)[] = [...buildCoverParagraphs(data)];
 
   if (data.mode === "grupal") {
@@ -44,7 +45,7 @@ export function buildReportDocument(data: ReportDocumentData): Document {
   }
 
   for (const row of data.players) {
-    children.push(...buildPlayerSectionChildren(row, data));
+    children.push(...(await buildPlayerSectionChildren(row, data)));
   }
 
   return new Document({

@@ -1,25 +1,21 @@
 import { Circle, Line, Polyline, Svg, Text, View } from "@react-pdf/renderer";
 import type { ThresholdRange } from "@/lib/format";
 import { COLORS } from "@/lib/pdf/styles";
+import { buildAksChartGeometry } from "@/lib/reportes/aks-chart-model";
 import type { PlayerAksHistoryPoint } from "@/lib/reportes/queries";
-
-const CHART_WIDTH = 480;
-const CHART_HEIGHT = 150;
-const AXIS_LABEL_HEIGHT = 20;
-const PADDING = { top: 16, right: 14, bottom: 22, left: 26 };
-
-type Point = { x: number; y: number };
 
 /**
  * Evolución del Índice AKS del jugador a través de TODAS sus valoraciones
- * (no solo la seleccionada para el resto del reporte) -- mismo criterio que
- * el gráfico "Evolución -- Índice AKS" de PlayerSummaryReport en el
- * Dashboard (components/dashboard/player-summary-report.tsx: líneas de
- * referencia del umbral configurado, sin interpolar valoraciones sin AKS
- * calculado). Recharts no puede ejecutarse dentro de un documento PDF, así
- * que esto se dibuja con las primitivas SVG nativas de
+ * (no solo la seleccionada para el resto del reporte). La matemática
+ * (escalas, segmentos, coordenadas) vive en lib/reportes/aks-chart-model.ts,
+ * compartida con el mismo gráfico del reporte Word (lib/docx/aks-chart-image.ts)
+ * -- acá solo se dibuja, con las primitivas SVG nativas de
  * @react-pdf/renderer (Svg/Line/Polyline/Circle) en vez de rasterizar una
- * imagen -- vector real dentro del PDF, no una captura.
+ * imagen: vector real dentro del PDF, no una captura. Recharts no puede
+ * ejecutarse dentro de un documento PDF, así que no se reutiliza el
+ * componente de pantalla (PlayerSummaryReport en el Dashboard) tal cual,
+ * aunque sí su mismo criterio (líneas de referencia del umbral, sin
+ * interpolar valoraciones sin AKS calculado).
  *
  * Las etiquetas de texto (eje X, umbral) se posicionan con <Text
  * position="absolute"> por fuera del <Svg> en vez de <Text> SVG nativo:
@@ -39,67 +35,34 @@ export function AksEvolutionChart({
   currentAssessmentId: string;
   threshold: ThresholdRange | null;
 }) {
-  const values = history.map((point) => point.aks_index).filter((value): value is number => value != null);
-  const thresholdValues = threshold ? [threshold.low_cut, threshold.high_cut] : [];
-  const allValues = [...values, ...thresholdValues];
+  const geometry = buildAksChartGeometry(history, currentAssessmentId, threshold);
+  if (!geometry) return null;
 
-  // Sin ningún valor (ni siquiera de umbral) para escalar el eje Y --
-  // no hay nada que dibujar. No debería pasar en la práctica (PlayerPage
-  // ya exige history.length > 1), pero evita un NaN si algún día sí pasa.
-  if (allValues.length === 0) return null;
-
-  const rawMin = Math.min(...allValues);
-  const rawMax = Math.max(...allValues);
-  // Margen del 12% para que puntos y líneas de referencia no queden pegados
-  // al borde del gráfico.
-  const span = rawMax - rawMin || 1;
-  const yMin = rawMin - span * 0.12;
-  const yMax = rawMax + span * 0.12;
-
-  const innerWidth = CHART_WIDTH - PADDING.left - PADDING.right;
-  const innerHeight = CHART_HEIGHT - PADDING.top - PADDING.bottom;
-  const axisY = PADDING.top + innerHeight;
-
-  const xAt = (index: number) => (history.length > 1 ? PADDING.left + (index * innerWidth) / (history.length - 1) : PADDING.left + innerWidth / 2);
-  const yAt = (value: number) => PADDING.top + innerHeight - ((value - yMin) / (yMax - yMin)) * innerHeight;
-
-  // Un tramo de Polyline por corrida contigua de valores no nulos -- una
-  // valoración sin AKS calculado corta la línea en vez de interpolar entre
-  // las vecinas, igual que connectNulls=false (default) en el Dashboard.
-  const segments: Point[][] = [];
-  let current: Point[] = [];
-  history.forEach((point, index) => {
-    if (point.aks_index == null) {
-      if (current.length > 0) segments.push(current);
-      current = [];
-      return;
-    }
-    current.push({ x: xAt(index), y: yAt(point.aks_index) });
-  });
-  if (current.length > 0) segments.push(current);
+  const { dimensions, axisY, segments, dataPoints, xLabels, thresholdLines } = geometry;
+  const { width, height, axisLabelHeight, padding } = dimensions;
 
   return (
-    <View style={{ width: CHART_WIDTH, height: CHART_HEIGHT + AXIS_LABEL_HEIGHT }}>
-      <View style={{ position: "relative", width: CHART_WIDTH, height: CHART_HEIGHT }}>
-        <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
-          <Line x1={PADDING.left} y1={axisY} x2={CHART_WIDTH - PADDING.right} y2={axisY} stroke={COLORS.border} strokeWidth={1} />
+    <View style={{ width, height: height + axisLabelHeight }}>
+      <View style={{ position: "relative", width, height }}>
+        <Svg width={width} height={height}>
+          <Line x1={padding.left} y1={axisY} x2={width - padding.right} y2={axisY} stroke={COLORS.border} strokeWidth={1} />
 
-          {threshold && (
+          {thresholdLines && (
             <>
               <Line
-                x1={PADDING.left}
-                y1={yAt(threshold.high_cut)}
-                x2={CHART_WIDTH - PADDING.right}
-                y2={yAt(threshold.high_cut)}
+                x1={padding.left}
+                y1={thresholdLines.high.y}
+                x2={width - padding.right}
+                y2={thresholdLines.high.y}
                 stroke={COLORS.blue}
                 strokeWidth={0.75}
                 strokeDasharray="3 3"
               />
               <Line
-                x1={PADDING.left}
-                y1={yAt(threshold.low_cut)}
-                x2={CHART_WIDTH - PADDING.right}
-                y2={yAt(threshold.low_cut)}
+                x1={padding.left}
+                y1={thresholdLines.low.y}
+                x2={width - padding.right}
+                y2={thresholdLines.low.y}
                 stroke={COLORS.blue}
                 strokeWidth={0.75}
                 strokeDasharray="3 3"
@@ -117,54 +80,48 @@ export function AksEvolutionChart({
             />
           ))}
 
-          {history.map((point, index) => {
-            if (point.aks_index == null) return null;
-            const isCurrent = point.id === currentAssessmentId;
-            return (
-              <Circle
-                key={point.id}
-                cx={xAt(index)}
-                cy={yAt(point.aks_index)}
-                r={isCurrent ? 3.2 : 2.2}
-                fill={isCurrent ? COLORS.blue : COLORS.red}
-              />
-            );
-          })}
+          {dataPoints.map((point) => (
+            <Circle key={point.id} cx={point.x} cy={point.y} r={point.isCurrent ? 3.2 : 2.2} fill={point.isCurrent ? COLORS.blue : COLORS.red} />
+          ))}
         </Svg>
 
-        {threshold && (
+        {thresholdLines && (
           <>
-            <Text
-              style={{ position: "absolute", top: yAt(threshold.high_cut) - 8, left: PADDING.left, fontSize: 6, color: COLORS.blue }}
-            >
-              {`Máx ${threshold.high_cut}`}
+            <Text style={{ position: "absolute", top: thresholdLines.high.y - 8, left: padding.left, fontSize: 6, color: COLORS.blue }}>
+              {thresholdLines.high.label}
             </Text>
-            <Text
-              style={{ position: "absolute", top: yAt(threshold.low_cut) + 2, left: PADDING.left, fontSize: 6, color: COLORS.blue }}
-            >
-              {`Mín ${threshold.low_cut}`}
+            <Text style={{ position: "absolute", top: thresholdLines.low.y + 2, left: padding.left, fontSize: 6, color: COLORS.blue }}>
+              {thresholdLines.low.label}
             </Text>
           </>
         )}
       </View>
 
-      <View style={{ position: "relative", width: CHART_WIDTH, height: AXIS_LABEL_HEIGHT }}>
-        {history.map((point, index) => (
-          <Text
-            key={point.id}
-            style={{
-              position: "absolute",
-              top: 2,
-              left: xAt(index) - 26,
-              width: 52,
-              fontSize: 6,
-              textAlign: "center",
-              color: point.id === currentAssessmentId ? COLORS.blue : COLORS.muted,
-            }}
-          >
-            {point.label}
-          </Text>
-        ))}
+      <View style={{ position: "relative", width, height: axisLabelHeight }}>
+        {xLabels.map((label) => {
+          // Ancho fijo de 52pt centrado/alineado sobre el punto -- el
+          // primer y último punto quedan pegados al borde del gráfico, así
+          // que se alinean hacia adentro (start/end) en vez de centrarse,
+          // o el texto se saldría del área dibujable y quedaría cortado.
+          const left = label.anchor === "start" ? label.x : label.anchor === "end" ? label.x - 52 : label.x - 26;
+          const textAlign = label.anchor === "start" ? "left" : label.anchor === "end" ? "right" : "center";
+          return (
+            <Text
+              key={label.id}
+              style={{
+                position: "absolute",
+                top: 2,
+                left,
+                width: 52,
+                fontSize: 6,
+                textAlign,
+                color: label.isCurrent ? COLORS.blue : COLORS.muted,
+              }}
+            >
+              {label.text}
+            </Text>
+          );
+        })}
       </View>
     </View>
   );

@@ -1,6 +1,7 @@
-import { Paragraph, Table, TableRow, TextRun, WidthType } from "docx";
+import { ImageRun, Paragraph, Table, TableRow, TextRun, WidthType } from "docx";
 import { computeDisplayAge } from "@/lib/calculations";
 import { classifyByThreshold, formatClassification, formatIndicator, formatPercentage } from "@/lib/format";
+import { buildAksChartPng } from "@/lib/docx/aks-chart-image";
 import { COLORS, FONT } from "@/lib/docx/styles";
 import { textCell } from "@/lib/docx/table-helpers";
 import { buildMeasurementGroups, type MeasurementGroup } from "@/lib/pdf/measurement-groups";
@@ -16,7 +17,10 @@ import { getAdjustmentLabel, getDietTypeNames, getFoodGroupRowTotal } from "@/li
  * indicadores, mediciones, diagnóstico, plan completo), con un layout más
  * simple: tablas de 2 columnas en vez de la grilla de tarjetas del PDF.
  */
-export function buildPlayerSectionChildren(row: ReportPlayerData, data: ReportDocumentData): (Paragraph | Table)[] {
+export async function buildPlayerSectionChildren(
+  row: ReportPlayerData,
+  data: ReportDocumentData
+): Promise<(Paragraph | Table)[]> {
   const { player, assessment, plan } = row;
   const age = computeDisplayAge(new Date(player.birth_date), new Date(assessment.assessment_date));
   const groups = buildMeasurementGroups(assessment);
@@ -52,9 +56,28 @@ export function buildPlayerSectionChildren(row: ReportPlayerData, data: ReportDo
       ["% Grasa (Yuhasz)", `${formatPercentage(assessment.fat_percentage)} · ${fatClassification}`],
       ["IAKS", `${formatIndicator(assessment.aks_index, 2)} · ${aksClassification}`],
     ]),
-    heading("Mediciones de la valoración"),
   ];
 
+  // Mismo criterio y mismo punto del documento que PlayerPage en el PDF
+  // (ver lib/pdf/player-page.tsx): solo en modo "individual" y solo si hay
+  // más de una valoración para comparar -- si no, se omite sin dejar
+  // ningún rastro (ni encabezado ni espacio vacío).
+  if (data.mode === "individual" && data.aksHistory && data.aksHistory.length > 1) {
+    const chart = await buildAksChartPng(data.aksHistory, assessment.id, data.thresholds.aks_index);
+    if (chart) {
+      children.push(
+        heading("Evolución · Índice AKS"),
+        new Paragraph({
+          spacing: { after: 160 },
+          children: [
+            new ImageRun({ type: "png", data: chart.buffer, transformation: { width: chart.width, height: chart.height } }),
+          ],
+        })
+      );
+    }
+  }
+
+  children.push(heading("Mediciones de la valoración"));
   for (const group of groups) {
     children.push(subheading(group.title), measurementGroupTable(group), spacer());
   }
