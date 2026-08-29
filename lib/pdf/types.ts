@@ -19,6 +19,11 @@ export type ReportPlayerData = {
 };
 
 export type ReportDocumentData = {
+  /** "grupal": tabla grupal + una página por jugador de la categoría.
+   *  "individual": sin tabla grupal, `players` siempre trae un solo elemento. */
+  mode: "grupal" | "individual";
+  /** Nombre de la categoría (grupal) o del jugador (individual) -- mismo
+   *  slot de la portada en los dos modos, ver lib/pdf/cover-page.tsx. */
   categoryName: string;
   valoracionLabel: string;
   generatedAtLabel: string;

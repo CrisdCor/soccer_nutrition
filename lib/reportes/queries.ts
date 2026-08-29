@@ -95,6 +95,44 @@ export async function getCategoryReportPlayers(
 }
 
 /**
+ * Igual que getCategoryReportPlayers(), pero para UN jugador puntual --
+ * modo Individual del reporte. null si el jugador no existe/no está
+ * activo, o si no tiene ninguna valoración con esa etiqueta (mismo
+ * criterio: la más reciente si hay más de una).
+ */
+export async function getPlayerReportAssessment(
+  playerId: string,
+  valoracionLabel: string
+): Promise<ReportPlayerAssessmentPair | null> {
+  const supabase = await createClient();
+
+  const { data: player, error: playerError } = await supabase
+    .from("players")
+    .select("id, full_name, sex, birth_date, photo_path, position:positions(name)")
+    .eq("id", playerId)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (playerError) throw playerError;
+  if (!player) return null;
+
+  const { data: assessments, error: assessmentsError } = await supabase
+    .from("assessments")
+    .select(ASSESSMENT_COLUMNS)
+    .eq("player_id", playerId)
+    .eq("label", valoracionLabel)
+    .order("assessment_date", { ascending: false })
+    .limit(1);
+
+  if (assessmentsError) throw assessmentsError;
+
+  const assessment = assessments?.[0];
+  if (!assessment) return null;
+
+  return { player, assessment };
+}
+
+/**
  * Nunca se usa la URL firmada acá (a diferencia de getPlayerPhotoUrl en
  * lib/jugadores/queries.ts): @react-pdf/renderer renderiza en el mismo
  * proceso serverless que arma la respuesta, así que evitamos un round-trip

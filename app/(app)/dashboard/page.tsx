@@ -30,7 +30,7 @@ export default async function DashboardPage({
           <h2 className="text-lg font-semibold text-foreground">Dashboard</h2>
           <p className="text-sm text-muted">Vista general filtrable por categoría y sexo.</p>
         </div>
-        <GenerateReportButton categories={categories} assessments={reportAssessments} />
+        <GenerateReportButton categories={categories} players={reportPlayers} assessments={reportAssessments} />
       </div>
 
       <DashboardFilterBar categories={categories} />

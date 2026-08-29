@@ -6,14 +6,19 @@ import { NameSearchInput, normalizeSearchText } from "@/components/ui/name-searc
 type PlayerOption = { id: string; full_name: string };
 
 /**
- * Combobox buscable para vincular un usuario role='jugador' a su fila en
- * `players` -- reutiliza NameSearchInput (mismo filtro por nombre que
- * /jugadores) en vez de un <select> nativo plano, con una lista
- * desplegable de resultados debajo. onMouseDown+preventDefault en cada
- * opción evita que el input pierda foco (y dispare su blur) antes de que
- * el click de selección se registre.
+ * Combobox buscable para elegir UN jugador por nombre -- reutiliza
+ * NameSearchInput (mismo filtro por nombre que /jugadores) con una lista
+ * desplegable de resultados debajo. Extraído de components/usuarios/
+ * (donde nació para vincular una cuenta role='jugador' a su player_id)
+ * porque el generador de reportes PDF (modo Individual) necesita
+ * exactamente el mismo control -- un solo componente, no una copia por
+ * cada lugar que elige un jugador.
+ *
+ * onMouseDown+preventDefault en cada opción evita que el input pierda
+ * foco (y dispare su blur) antes de que el click de selección se
+ * registre.
  */
-export function PlayerLinkSelect({
+export function PlayerSearchSelect({
   players,
   value,
   onChange,
@@ -57,7 +62,7 @@ export function PlayerLinkSelect({
         value={query}
         onChange={handleQueryChange}
         placeholder="Buscar jugador por nombre…"
-        aria-label="Jugador vinculado"
+        aria-label="Jugador"
       />
       {open && (
         <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-border bg-surface shadow-md">

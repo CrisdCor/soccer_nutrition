@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Field } from "@/components/ui/field";
-import { PlayerLinkSelect } from "@/components/usuarios/player-link-select";
+import { PlayerSearchSelect } from "@/components/ui/player-search-select";
 import { createUserFormSchema, type CreateUserFormValues } from "@/lib/validation/user";
 
 type PlayerOption = { id: string; full_name: string };
@@ -76,7 +76,7 @@ export function UserForm({
       </Field>
 
       {/* Solo para role='jugador' -- no un <Field> (el id que clonaría no
-          llega al input real dentro de PlayerLinkSelect, mismo criterio
+          llega al input real dentro de PlayerSearchSelect, mismo criterio
           que otros controles compuestos de la app, ver
           ResetPasswordModal). */}
       {role === "jugador" && (
@@ -91,7 +91,7 @@ export function UserForm({
               name="player_id"
               control={control}
               render={({ field }) => (
-                <PlayerLinkSelect players={players} value={field.value ?? ""} onChange={field.onChange} />
+                <PlayerSearchSelect players={players} value={field.value ?? ""} onChange={field.onChange} />
               )}
             />
           )}
