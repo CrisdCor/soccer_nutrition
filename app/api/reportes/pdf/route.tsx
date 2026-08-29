@@ -8,6 +8,7 @@ import { ReportDocument } from "@/lib/pdf/report-document";
 import type { ReportDocumentData, ReportPlayerData } from "@/lib/pdf/types";
 import {
   getCategoryReportPlayers,
+  getPlayerAksHistory,
   getPlayerPhotoDataUri,
   getPlayerReportAssessment,
 } from "@/lib/reportes/queries";
@@ -79,12 +80,16 @@ export async function GET(request: NextRequest) {
       return new Response("No se encontró una valoración con esa etiqueta para ese jugador.", { status: 404 });
     }
 
-    const plansByAssessment = await getNutritionPlansByAssessmentIds([pair.assessment.id]);
+    const [plansByAssessment, photoDataUri, aksHistory] = await Promise.all([
+      getNutritionPlansByAssessmentIds([pair.assessment.id]),
+      getPlayerPhotoDataUri(pair.player.photo_path),
+      getPlayerAksHistory(playerId),
+    ]);
     const player: ReportPlayerData = {
       player: pair.player,
       assessment: pair.assessment,
       plan: plansByAssessment[pair.assessment.id] ?? null,
-      photoDataUri: await getPlayerPhotoDataUri(pair.player.photo_path),
+      photoDataUri,
     };
 
     const data: ReportDocumentData = {
@@ -92,6 +97,10 @@ export async function GET(request: NextRequest) {
       mode: "individual",
       categoryName: pair.player.full_name,
       players: [player],
+      // Gráfico de evolución de AKS (ver lib/pdf/aks-evolution-chart.tsx):
+      // el propio PlayerPage lo omite si el jugador tiene una sola
+      // valoración, acá no hace falta duplicar esa condición.
+      aksHistory,
     };
 
     return renderPdfResponse(data, `informe-${slugify(pair.player.full_name)}-${slugify(valoracionLabel)}.pdf`);
@@ -133,6 +142,10 @@ export async function GET(request: NextRequest) {
     mode: "grupal",
     categoryName: category.name,
     players,
+    // El gráfico de evolución de AKS es solo del reporte individual (ver
+    // lib/pdf/aks-evolution-chart.tsx) -- no aplica por jugador dentro de
+    // una tabla comparativa de toda la categoría.
+    aksHistory: null,
   };
 
   return renderPdfResponse(data, `informe-${slugify(category.name)}-${slugify(valoracionLabel)}.pdf`);

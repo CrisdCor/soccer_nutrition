@@ -1,6 +1,7 @@
 import { Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { computeDisplayAge } from "@/lib/calculations";
 import { classifyByThreshold, formatClassification, formatIndicator, formatPercentage } from "@/lib/format";
+import { AksEvolutionChart } from "@/lib/pdf/aks-evolution-chart";
 import { buildMeasurementGroups } from "@/lib/pdf/measurement-groups";
 import { COLORS, sharedStyles } from "@/lib/pdf/styles";
 import type { ReportDocumentData, ReportPlayerData } from "@/lib/pdf/types";
@@ -206,6 +207,13 @@ export function PlayerPage({ row, data }: { row: ReportPlayerData; data: ReportD
           </View>
         </View>
       </View>
+
+      {data.mode === "individual" && data.aksHistory && data.aksHistory.length > 1 && (
+        <View style={sharedStyles.section} wrap={false}>
+          <Text style={sharedStyles.h2}>Evolución · Índice AKS</Text>
+          <AksEvolutionChart history={data.aksHistory} currentAssessmentId={assessment.id} threshold={data.thresholds.aks_index} />
+        </View>
+      )}
 
       <View style={sharedStyles.section}>
         <Text style={sharedStyles.h2}>Mediciones de la valoración</Text>

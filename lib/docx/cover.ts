@@ -1,6 +1,6 @@
 import { AlignmentType, ImageRun, Paragraph, TextRun } from "docx";
 import { dataUriToBuffer } from "@/lib/docx/image-utils";
-import { COLORS } from "@/lib/docx/styles";
+import { COLORS, FONT } from "@/lib/docx/styles";
 import type { ReportDocumentData } from "@/lib/pdf/types";
 
 /**
@@ -28,22 +28,24 @@ export function buildCoverParagraphs(data: ReportDocumentData): Paragraph[] {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: shieldBuffer ? 0 : 1400, after: 80 },
-      children: [new TextRun({ text: "INFORME GENERAL", bold: true, size: 52, color: COLORS.blue })],
+      children: [new TextRun({ text: "INFORME GENERAL", font: FONT, bold: true, size: 52, color: COLORS.blue })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 220 },
-      children: [new TextRun({ text: "FUERZAS BÁSICAS", bold: true, size: 26, color: COLORS.red })],
+      children: [new TextRun({ text: "FUERZAS BÁSICAS", font: FONT, bold: true, size: 26, color: COLORS.red })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 600 },
-      children: [new TextRun({ text: `${data.categoryName} · ${data.valoracionLabel}`, size: 20, color: COLORS.muted })],
+      children: [
+        new TextRun({ text: `${data.categoryName} · ${data.valoracionLabel}`, font: FONT, size: 20, color: COLORS.muted }),
+      ],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 20 },
-      children: [new TextRun({ text: data.generatedByName, bold: true, size: 22 })],
+      children: [new TextRun({ text: data.generatedByName, font: FONT, bold: true, size: 22 })],
     })
   );
 
@@ -51,7 +53,7 @@ export function buildCoverParagraphs(data: ReportDocumentData): Paragraph[] {
     paragraphs.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
-        children: [new TextRun({ text: data.generatedByRoleTitle, size: 18, color: COLORS.muted })],
+        children: [new TextRun({ text: data.generatedByRoleTitle, font: FONT, size: 18, color: COLORS.muted })],
       })
     );
   }

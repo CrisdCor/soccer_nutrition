@@ -1,6 +1,6 @@
 import { BorderStyle, Paragraph, ShadingType, TableCell, TextRun, WidthType } from "docx";
 import type { IBorderOptions } from "docx";
-import { COLORS } from "@/lib/docx/styles";
+import { COLORS, FONT } from "@/lib/docx/styles";
 
 export const THIN_BORDER: IBorderOptions = { style: BorderStyle.SINGLE, size: 2, color: COLORS.border };
 export const CELL_BORDERS = { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER };
@@ -32,6 +32,7 @@ export function textCell(
         children: [
           new TextRun({
             text,
+            font: FONT,
             bold: header || bold,
             size: header ? 16 : 17,
             color: header ? COLORS.white : shaded ? COLORS.red : undefined,

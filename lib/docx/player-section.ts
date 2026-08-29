@@ -1,7 +1,7 @@
 import { Paragraph, Table, TableRow, TextRun, WidthType } from "docx";
 import { computeDisplayAge } from "@/lib/calculations";
 import { classifyByThreshold, formatClassification, formatIndicator, formatPercentage } from "@/lib/format";
-import { COLORS } from "@/lib/docx/styles";
+import { COLORS, FONT } from "@/lib/docx/styles";
 import { textCell } from "@/lib/docx/table-helpers";
 import { buildMeasurementGroups, type MeasurementGroup } from "@/lib/pdf/measurement-groups";
 import type { ReportCatalogs, ReportDocumentData, ReportPlayerData } from "@/lib/pdf/types";
@@ -30,12 +30,17 @@ export function buildPlayerSectionChildren(row: ReportPlayerData, data: ReportDo
     new Paragraph({
       pageBreakBefore: true,
       spacing: { after: 40 },
-      children: [new TextRun({ text: player.full_name, bold: true, size: 28, color: COLORS.foreground })],
+      children: [new TextRun({ text: player.full_name, font: FONT, bold: true, size: 28, color: COLORS.foreground })],
     }),
     new Paragraph({
       spacing: { after: 160 },
       children: [
-        new TextRun({ text: `${assessment.label} · ${assessment.assessment_date}`, size: 17, color: COLORS.muted }),
+        new TextRun({
+          text: `${assessment.label} · ${assessment.assessment_date}`,
+          font: FONT,
+          size: 17,
+          color: COLORS.muted,
+        }),
       ],
     }),
     statsParagraph([
@@ -95,8 +100,8 @@ function buildPlanSections(plan: NutritionPlanFull, catalogs: ReportCatalogs): (
       new Paragraph({
         spacing: { after: 80 },
         children: [
-          new TextRun({ text: `${mealType.name}: `, bold: true, size: 17 }),
-          new TextRun({ text: plan.menuExamples[mealType.id] || "Sin ejemplo registrado.", size: 17 }),
+          new TextRun({ text: `${mealType.name}: `, font: FONT, bold: true, size: 17 }),
+          new TextRun({ text: plan.menuExamples[mealType.id] || "Sin ejemplo registrado.", font: FONT, size: 17 }),
         ],
       })
     );
@@ -191,25 +196,25 @@ function measurementGroupTable(group: MeasurementGroup): Table {
 function heading(text: string): Paragraph {
   return new Paragraph({
     spacing: { before: 220, after: 100 },
-    children: [new TextRun({ text, bold: true, size: 20, color: COLORS.foreground })],
+    children: [new TextRun({ text, font: FONT, bold: true, size: 20, color: COLORS.foreground })],
   });
 }
 
 function subheading(text: string): Paragraph {
   return new Paragraph({
     spacing: { after: 60 },
-    children: [new TextRun({ text, size: 15, color: COLORS.muted })],
+    children: [new TextRun({ text, font: FONT, size: 15, color: COLORS.muted })],
   });
 }
 
 function bodyParagraph(text: string): Paragraph {
-  return new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text, size: 18 })] });
+  return new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text, font: FONT, size: 18 })] });
 }
 
 function mutedParagraph(text: string): Paragraph {
   return new Paragraph({
     spacing: { after: 120 },
-    children: [new TextRun({ text, italics: true, size: 18, color: COLORS.muted })],
+    children: [new TextRun({ text, font: FONT, italics: true, size: 18, color: COLORS.muted })],
   });
 }
 
@@ -220,9 +225,9 @@ function spacer(): Paragraph {
 function statsParagraph(pairs: [string, string][]): Paragraph {
   const runs: TextRun[] = [];
   pairs.forEach(([label, value], index) => {
-    if (index > 0) runs.push(new TextRun({ text: "    ", size: 17 }));
-    runs.push(new TextRun({ text: `${label}: `, bold: true, size: 17 }));
-    runs.push(new TextRun({ text: value, size: 17 }));
+    if (index > 0) runs.push(new TextRun({ text: "    ", font: FONT, size: 17 }));
+    runs.push(new TextRun({ text: `${label}: `, font: FONT, bold: true, size: 17 }));
+    runs.push(new TextRun({ text: value, font: FONT, size: 17 }));
   });
   return new Paragraph({ spacing: { after: 200 }, children: runs });
 }

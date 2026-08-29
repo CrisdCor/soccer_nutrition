@@ -84,6 +84,10 @@ export async function GET(request: NextRequest) {
       mode: "individual",
       categoryName: pair.player.full_name,
       players: [player],
+      // El gráfico de evolución de AKS es solo del PDF individual en esta
+      // entrega (ver lib/pdf/aks-evolution-chart.tsx) -- el Word no lo
+      // requiere todavía.
+      aksHistory: null,
     };
 
     return renderDocxResponse(data, `informe-${slugify(pair.player.full_name)}-${slugify(valoracionLabel)}.docx`);
@@ -125,6 +129,7 @@ export async function GET(request: NextRequest) {
     mode: "grupal",
     categoryName: category.name,
     players,
+    aksHistory: null,
   };
 
   return renderDocxResponse(data, `informe-${slugify(category.name)}-${slugify(valoracionLabel)}.docx`);

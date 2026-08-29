@@ -132,6 +132,35 @@ export async function getPlayerReportAssessment(
   return { player, assessment };
 }
 
+export type PlayerAksHistoryPoint = {
+  id: string;
+  label: string;
+  assessment_date: string;
+  aks_index: number | null;
+};
+
+/**
+ * Todas las valoraciones del jugador (no solo la elegida para el resto del
+ * reporte), ascendente por fecha -- para el gráfico de evolución de Índice
+ * AKS del PDF individual (ver lib/pdf/aks-evolution-chart.tsx). Mismo
+ * orden ascendente que listReportAssessments() del dashboard
+ * (lib/dashboard/report-queries.ts); acá acotado a un solo jugador y con
+ * solo las columnas que el gráfico necesita, en vez de reutilizar esa
+ * consulta pensada para las 5 visualizaciones del dashboard.
+ */
+export async function getPlayerAksHistory(playerId: string): Promise<PlayerAksHistoryPoint[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("assessments")
+    .select("id, label, assessment_date, aks_index")
+    .eq("player_id", playerId)
+    .order("assessment_date", { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
 /**
  * Nunca se usa la URL firmada acá (a diferencia de getPlayerPhotoUrl en
  * lib/jugadores/queries.ts): @react-pdf/renderer renderiza en el mismo
