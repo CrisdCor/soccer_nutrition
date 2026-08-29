@@ -69,14 +69,20 @@ export function GenerateReportButton({
   const hasGrupalOptions = categories.length > 0 && valoracionOptions.length > 0;
   const hasIndividualOptions = categoryPlayers.length > 0 && playerValoracionOptions.length > 0;
 
-  const downloadHref =
+  // Mismos parámetros para los dos formatos -- solo cambia el endpoint
+  // (ver app/api/reportes/pdf/route.tsx y app/api/reportes/docx/route.ts,
+  // que arman exactamente los mismos datos).
+  const reportQuery =
     mode === "grupal"
       ? hasGrupalOptions && categoryId && valoracionLabel
-        ? `/api/reportes/pdf?mode=grupal&category=${encodeURIComponent(categoryId)}&valoracion=${encodeURIComponent(valoracionLabel)}`
+        ? `mode=grupal&category=${encodeURIComponent(categoryId)}&valoracion=${encodeURIComponent(valoracionLabel)}`
         : undefined
       : hasIndividualOptions && effectivePlayerId && effectivePlayerValoracionLabel
-        ? `/api/reportes/pdf?mode=individual&player=${encodeURIComponent(effectivePlayerId)}&valoracion=${encodeURIComponent(effectivePlayerValoracionLabel)}`
+        ? `mode=individual&player=${encodeURIComponent(effectivePlayerId)}&valoracion=${encodeURIComponent(effectivePlayerValoracionLabel)}`
         : undefined;
+
+  const downloadHrefPdf = reportQuery ? `/api/reportes/pdf?${reportQuery}` : undefined;
+  const downloadHrefDocx = reportQuery ? `/api/reportes/docx?${reportQuery}` : undefined;
 
   // El caso "sin ninguna valoración registrada todavía" en modo grupal
   // queda cubierto por este mensaje genérico; en individual, por los
@@ -190,15 +196,26 @@ export function GenerateReportButton({
                   </>
                 )}
 
-                {downloadHref ? (
-                  <a href={downloadHref} onClick={() => setOpen(false)} className="btn-primary w-full">
-                    Descargar PDF
-                  </a>
-                ) : (
-                  <button type="button" disabled className="btn-primary w-full">
-                    Descargar PDF
-                  </button>
-                )}
+                <div className="flex gap-2">
+                  {downloadHrefPdf ? (
+                    <a href={downloadHrefPdf} onClick={() => setOpen(false)} className="btn-primary flex-1">
+                      Descargar PDF
+                    </a>
+                  ) : (
+                    <button type="button" disabled className="btn-primary flex-1">
+                      Descargar PDF
+                    </button>
+                  )}
+                  {downloadHrefDocx ? (
+                    <a href={downloadHrefDocx} onClick={() => setOpen(false)} className="btn-secondary flex-1">
+                      Descargar Word
+                    </a>
+                  ) : (
+                    <button type="button" disabled className="btn-secondary flex-1">
+                      Descargar Word
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </Sheet.Body>

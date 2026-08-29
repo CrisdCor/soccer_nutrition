@@ -4,6 +4,7 @@ import { classifyByThreshold, formatClassification, formatIndicator, formatPerce
 import { buildMeasurementGroups } from "@/lib/pdf/measurement-groups";
 import { COLORS, sharedStyles } from "@/lib/pdf/styles";
 import type { ReportDocumentData, ReportPlayerData } from "@/lib/pdf/types";
+import { getAdjustmentLabel, getDietTypeNames, getFoodGroupRowTotal } from "@/lib/reportes/plan-view-model";
 
 const styles = StyleSheet.create({
   page: sharedStyles.page,
@@ -262,19 +263,9 @@ function PlanSections({
   plan: NonNullable<ReportPlayerData["plan"]>;
   catalogs: ReportDocumentData["catalogs"];
 }) {
-  const dietTypeNames = plan.dietTypeIds
-    .map((id) => catalogs.dietTypes.find((d) => d.id === id)?.name)
-    .filter((name): name is string => Boolean(name));
-
-  const adjustmentLabel =
-    plan.caloric_adjustment_kcal == null
-      ? null
-      : plan.caloric_adjustment_kcal < 0
-        ? `Déficit de ${Math.abs(plan.caloric_adjustment_kcal)} kcal`
-        : `Superávit de ${plan.caloric_adjustment_kcal} kcal`;
-
-  const rowTotal = (foodGroupId: string) =>
-    catalogs.mealTypes.reduce((sum, mealType) => sum + (plan.portions[`${foodGroupId}:${mealType.id}`] ?? 0), 0);
+  const dietTypeNames = getDietTypeNames(plan, catalogs);
+  const adjustmentLabel = getAdjustmentLabel(plan);
+  const rowTotal = (foodGroupId: string) => getFoodGroupRowTotal(plan, catalogs, foodGroupId);
 
   const mealColWidth = 60 / Math.max(catalogs.mealTypes.length, 1);
 

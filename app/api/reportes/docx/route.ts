@@ -1,10 +1,10 @@
-import { renderToBuffer } from "@react-pdf/renderer";
+import { Packer } from "docx";
 import type { NextRequest } from "next/server";
 import { requireProfile } from "@/lib/auth/session";
 import { listCategories } from "@/lib/catalogos/queries";
 import { getCurrentThresholds, listDietTypes, listFoodGroups } from "@/lib/configuracion/queries";
 import { getNutritionPlansByAssessmentIds, listMealTypes } from "@/lib/nutricion/queries";
-import { ReportDocument } from "@/lib/pdf/report-document";
+import { buildReportDocument } from "@/lib/docx/report-document";
 import type { ReportDocumentData, ReportPlayerData } from "@/lib/pdf/types";
 import {
   getCategoryReportPlayers,
@@ -14,26 +14,18 @@ import {
 import { ROLE_TITLES, slugify } from "@/lib/reportes/route-shared";
 import { getShieldDataUri } from "@/lib/reportes/shield";
 
-// @react-pdf/renderer usa APIs de Node (fs, streams) -- no corre en el
-// Edge Runtime. Route Handlers son Node por defecto, esto lo deja explícito.
+// docx usa APIs de Node -- no corre en el Edge Runtime, igual que el PDF
+// (ver app/api/reportes/pdf/route.tsx).
 export const runtime = "nodejs";
 
 /**
- * GET /api/reportes/pdf?mode=grupal&category=<id>&valoracion=<label>
- * GET /api/reportes/pdf?mode=individual&player=<id>&valoracion=<label>
+ * GET /api/reportes/docx?mode=grupal&category=<id>&valoracion=<label>
+ * GET /api/reportes/docx?mode=individual&player=<id>&valoracion=<label>
  *
- * Genera y descarga el Informe General en PDF:
- * - "grupal" (default si `mode` falta, para no romper links viejos):
- *   portada + tabla grupal + una página por jugador activo de la
- *   categoría con esa valoración.
- * - "individual": portada + una sola página, reutilizando el mismo
- *   PlayerPage del modo grupal (ver lib/pdf/report-document.tsx) -- no
- *   hay tabla grupal, no aplica con un solo jugador.
- *
- * Requiere sesión (proxy.ts ya protege /api/* igual que el resto de la
- * app); no hay restricción de rol adicional -- generar/leer el reporte no
- * es una operación de escritura, así que role = 'lider' también puede
- * usarlo.
+ * Misma consulta/armado de datos que /api/reportes/pdf (ver ese archivo):
+ * este handler solo cambia el renderer de salida (Document/Packer de
+ * `docx` en vez de renderToBuffer de @react-pdf/renderer). No se duplica
+ * ninguna lógica de obtención de datos.
  */
 export async function GET(request: NextRequest) {
   const { profile } = await requireProfile();
@@ -94,7 +86,7 @@ export async function GET(request: NextRequest) {
       players: [player],
     };
 
-    return renderPdfResponse(data, `informe-${slugify(pair.player.full_name)}-${slugify(valoracionLabel)}.pdf`);
+    return renderDocxResponse(data, `informe-${slugify(pair.player.full_name)}-${slugify(valoracionLabel)}.docx`);
   }
 
   const categoryId = searchParams.get("category");
@@ -135,15 +127,15 @@ export async function GET(request: NextRequest) {
     players,
   };
 
-  return renderPdfResponse(data, `informe-${slugify(category.name)}-${slugify(valoracionLabel)}.pdf`);
+  return renderDocxResponse(data, `informe-${slugify(category.name)}-${slugify(valoracionLabel)}.docx`);
 }
 
-async function renderPdfResponse(data: ReportDocumentData, fileName: string): Promise<Response> {
-  const buffer = await renderToBuffer(<ReportDocument data={data} />);
+async function renderDocxResponse(data: ReportDocumentData, fileName: string): Promise<Response> {
+  const buffer = await Packer.toBuffer(buildReportDocument(data));
 
   return new Response(new Uint8Array(buffer), {
     headers: {
-      "Content-Type": "application/pdf",
+      "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "Content-Disposition": `attachment; filename="${fileName}"`,
     },
   });
