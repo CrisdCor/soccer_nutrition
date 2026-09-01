@@ -1,6 +1,5 @@
 import { DashboardFilterBar } from "@/components/dashboard/filter-bar";
 import { DashboardReports } from "@/components/dashboard/dashboard-reports";
-import { GenerateReportButton } from "@/components/dashboard/generate-report-button";
 import { listCategories, listPositions } from "@/lib/catalogos/queries";
 import { getCurrentThresholds } from "@/lib/configuracion/queries";
 import { getDashboardStats } from "@/lib/dashboard/queries";
@@ -25,12 +24,9 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Dashboard</h2>
-          <p className="text-sm text-muted">Vista general filtrable por categoría y sexo.</p>
-        </div>
-        <GenerateReportButton categories={categories} players={reportPlayers} assessments={reportAssessments} />
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Dashboard</h2>
+        <p className="text-sm text-muted">Vista general filtrable por categoría y sexo.</p>
       </div>
 
       <DashboardFilterBar categories={categories} />

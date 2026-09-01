@@ -10,6 +10,7 @@ import { getInitials } from "@/lib/auth/format";
 import { useUserProfile } from "@/lib/auth/user-profile-context";
 
 const MORE_ITEMS_BASE = [
+  { label: "Reportes", href: "/reportes" },
   { label: "Catálogos", href: "/catalogos" },
   { label: "Configuración", href: "/configuracion" },
 ];
