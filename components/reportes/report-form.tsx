@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type MouseEvent } from "react";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { PlayerSearchSelect } from "@/components/ui/player-search-select";
+import { NoDataDialog } from "@/components/reportes/no-data-dialog";
 import { buildValoracionOptions } from "@/lib/dashboard/report-helpers";
 import type { ReportAssessment, ReportPlayer } from "@/lib/dashboard/report-queries";
 
@@ -64,6 +65,45 @@ export function ReportForm({
 
   const hasGrupalOptions = categories.length > 0 && valoracionOptions.length > 0;
   const hasIndividualOptions = categoryPlayers.length > 0 && playerValoracionOptions.length > 0;
+
+  // Validación previa a intentar generar: ¿esta combinación puntual de
+  // filtros (no solo "hay categorías"/"hay jugadores" en general, como los
+  // dos checks de arriba) tiene al menos un jugador con datos? En Grupal,
+  // valoracionOptions no está acotado por categoría (viene de TODAS las
+  // valoraciones), así que Categoría A + una etiqueta que solo tienen
+  // jugadores de Categoría B es una combinación válida en los selects pero
+  // sin ningún dato real detrás -- de ahí este chequeo aparte, no solo
+  // "¿hay opciones?". En Individual la combinación ya viene acotada por la
+  // cascada de selects (playerValoracionOptions es del jugador elegido), así
+  // que en la práctica este chequeo actúa como red de seguridad ante datos
+  // que quedaron desactualizados en el cliente, no como el camino normal.
+  const hasGrupalMatch = useMemo(() => {
+    if (!categoryId || !valoracionLabel) return false;
+    const categoryPlayerIds = new Set(
+      players.filter((player) => player.category?.id === categoryId).map((player) => player.id)
+    );
+    return assessments.some((a) => a.label === valoracionLabel && categoryPlayerIds.has(a.player_id));
+  }, [players, assessments, categoryId, valoracionLabel]);
+
+  const hasIndividualMatch = useMemo(() => {
+    if (!effectivePlayerId || !effectivePlayerValoracionLabel) return false;
+    return assessments.some(
+      (a) => a.player_id === effectivePlayerId && a.label === effectivePlayerValoracionLabel
+    );
+  }, [assessments, effectivePlayerId, effectivePlayerValoracionLabel]);
+
+  const hasMatch = mode === "grupal" ? hasGrupalMatch : hasIndividualMatch;
+
+  const [noDataOpen, setNoDataOpen] = useState(false);
+
+  function handleDownloadClick(event: MouseEvent<HTMLAnchorElement>) {
+    if (hasMatch) return;
+    // No se descarga nada: se cancela la navegación del <a> y se muestra el
+    // modal en su lugar -- la validación de datos es previa a elegir el
+    // formato de salida, así que este mismo handler sirve para PDF y Word.
+    event.preventDefault();
+    setNoDataOpen(true);
+  }
 
   // Mismos parámetros para los dos formatos -- solo cambia el endpoint
   // (ver app/api/reportes/pdf/route.tsx y app/api/reportes/docx/route.ts,
@@ -184,7 +224,7 @@ export function ReportForm({
 
       <div className="flex gap-2">
         {downloadHrefPdf ? (
-          <a href={downloadHrefPdf} className="btn-primary flex-1">
+          <a href={downloadHrefPdf} onClick={handleDownloadClick} className="btn-primary flex-1">
             Descargar PDF
           </a>
         ) : (
@@ -193,7 +233,7 @@ export function ReportForm({
           </button>
         )}
         {downloadHrefDocx ? (
-          <a href={downloadHrefDocx} className="btn-secondary flex-1">
+          <a href={downloadHrefDocx} onClick={handleDownloadClick} className="btn-secondary flex-1">
             Descargar Word
           </a>
         ) : (
@@ -202,6 +242,16 @@ export function ReportForm({
           </button>
         )}
       </div>
+
+      <NoDataDialog
+        open={noDataOpen}
+        onOpenChange={setNoDataOpen}
+        message={
+          mode === "grupal"
+            ? "No hay valoraciones registradas para esta categoría y valoración seleccionada."
+            : "Este jugador no tiene la valoración seleccionada registrada."
+        }
+      />
     </div>
   );
 }
