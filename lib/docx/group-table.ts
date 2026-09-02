@@ -18,8 +18,10 @@ const COLUMN_WIDTHS = {
 
 /**
  * Tabla grupal del reporte de Word (modo "grupal" únicamente): mismas
- * columnas y mismo criterio de color de celda por umbral configurado que la
- * página 2 del PDF (ver lib/pdf/group-table-page.tsx) -- Word soporta
+ * columnas que la página 2 del PDF (ver lib/pdf/group-table-page.tsx).
+ * Suma 6 Pliegues usa 3 niveles (azul si Óptima/bajo, rojo si Alta/alto,
+ * sin color si Aceptable/normal) -- Índice AKS sin cambios, sigue siendo
+ * binario (rojo si fuera de rango, sin color si dentro). Word soporta
  * `shading` de celda nativo, así que no hace falta ningún workaround.
  */
 export function buildGroupTable(data: ReportDocumentData): Table {
@@ -45,7 +47,9 @@ export function buildGroupTable(data: ReportDocumentData): Table {
 function buildPlayerRow(row: ReportPlayerData, thresholds: ReportDocumentData["thresholds"]): TableRow {
   const { player, assessment } = row;
   const age = computeDisplayAge(new Date(player.birth_date), new Date(assessment.assessment_date));
-  const skinfoldOut = isOutOfRange(assessment.skinfold_sum_6, thresholds.skinfold_sum);
+
+  const skinfoldClassification = classifyByThreshold(assessment.skinfold_sum_6, thresholds.skinfold_sum);
+  const skinfoldTone = skinfoldClassification === "alto" ? "red" : skinfoldClassification === "bajo" ? "blue" : undefined;
   const aksOut = isOutOfRange(assessment.aks_index, thresholds.aks_index);
 
   return new TableRow({
@@ -58,9 +62,12 @@ function buildPlayerRow(row: ReportPlayerData, thresholds: ReportDocumentData["t
       textCell(formatPercentage(assessment.muscle_percentage), { widthPct: COLUMN_WIDTHS.musclePct }),
       textCell(formatIndicator(assessment.skinfold_sum_6, 1, " mm"), {
         widthPct: COLUMN_WIDTHS.skinfoldSum,
-        shaded: skinfoldOut,
+        tone: skinfoldTone,
       }),
-      textCell(formatIndicator(assessment.aks_index, 2), { widthPct: COLUMN_WIDTHS.aks, shaded: aksOut }),
+      textCell(formatIndicator(assessment.aks_index, 2), {
+        widthPct: COLUMN_WIDTHS.aks,
+        tone: aksOut ? "red" : undefined,
+      }),
     ],
   });
 }

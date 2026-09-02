@@ -40,4 +40,9 @@ export type ReportDocumentData = {
    *  "individual" cuando el jugador tiene una sola valoración (nada que
    *  comparar, el PlayerPage omite el gráfico directamente). */
   aksHistory: PlayerAksHistoryPoint[] | null;
+  /** Checkbox "Incluir plan de alimentación" de /reportes (ver
+   *  components/reportes/report-form.tsx) -- en false, las páginas de
+   *  jugador omiten la sección de plan completa (ni el plan ni el placeholder
+   *  "no registrado"), en ambos formatos y ambos modos. */
+  includePlan: boolean;
 };

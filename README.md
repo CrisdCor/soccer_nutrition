@@ -286,10 +286,15 @@ trigger propio) para poder dispararse tanto desde un botón suelto como
 desde un ítem de un `DropdownMenu` (que no puede anidar su propio trigger
 con estado local, mismo motivo por el que existe `useConfirmDialog`).
 
-La clasificación de %Grasa reutiliza el umbral de `skinfold_sum` (no hay un
-umbral separado para el porcentaje: al derivarse monótonamente de la Suma 6
-Pliegues, clasificar por ese umbral equivale a clasificar el %Grasa). Ver
-`classifyByThreshold` en `lib/format.ts`.
+%Grasa tiene su propio umbral (`fat_percentage` en `reference_thresholds`,
+independiente del de Suma 6 Pliegues) y su propia clasificación de 3 niveles
+con color: <umbral bajo Óptimo (azul), en rango Aceptable (sin color), >umbral
+alto Alto (rojo). Suma 6 Pliegues usa el mismo criterio de 3 niveles
+(Óptima/Aceptable/Alta). Índice AKS es la excepción: sigue siendo binario
+(bajo y alto se tratan igual, "Fuera de rango" en rojo, sin distinguir
+dirección) -- ver `classifyByThreshold`/`formatClassification` vs.
+`formatSkinfoldSumClassification`/`formatFatPercentageClassification` en
+`lib/format.ts`.
 
 ## Plan de alimentación
 
@@ -396,7 +401,10 @@ la página; cada vista maneja su propio scroll vertical interno.
 - Colores en tabla: `RangeBadge` marca "Fuera de rango" en rojo (badge, no
   relleno de fila) solo cuando el valor cae fuera del umbral; dentro de
   rango no se pinta nada — ausencia de color = está bien, mismo principio
-  del Design System que el resto de la app.
+  del Design System que el resto de la app. Eso es para AKS (sin cambios,
+  binario). Suma 6 Pliegues usa `ThreeLevelBadge` en vez de `RangeBadge`:
+  distingue bajo (azul, "Óptima") de alto (rojo, "Alta") -- ver
+  `lib/format.ts`/`components/dashboard/three-level-badge.tsx`.
 - Top N (mejores/peores, N configurable, 10 por defecto): "mejor" = valor
   más bajo de la métrica, literal, no un juicio fisiológico — si para AKS
   el sentido debería ser al revés, es un cambio de una línea en
@@ -425,9 +433,10 @@ la página; cada vista maneja su propio scroll vertical interno.
 `lib/calculations/` implementa cada fórmula (Suma 6 Pliegues, perímetros
 corregidos, Rocha, Lee 2000, Yuhasz, masa adiposa/residual, IMC, AKS) como una
 función pura e independiente — nunca traducción literal del Excel. Regla
-transversal: si falta un dato de entrada, el indicador queda `null` ("dato
-insuficiente"), nunca se asume `0` ni se propaga en cascada. `lib/format.ts`
-muestra esos `null` como "Dato insuficiente" en toda la UI.
+transversal: si falta un dato de entrada, el indicador queda `null` (dato
+insuficiente), nunca se asume `0` ni se propaga en cascada. `lib/format.ts`
+muestra esos `null` como campo vacío (o un guion "—" puntual donde el layout
+lo necesita) en toda la UI -- nunca como "0" ni como un texto explicativo.
 
 ## Esquema de base de datos
 

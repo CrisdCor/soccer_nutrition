@@ -4,15 +4,16 @@ import { requireProfile } from "@/lib/auth/session";
 import {
   createDietType,
   createFoodGroup,
-  createThreshold,
   toggleDietTypeActive,
   toggleFoodGroupActive,
+  upsertThreshold,
 } from "@/lib/configuracion/actions";
 import { listDietTypes, listFoodGroups, listThresholds } from "@/lib/configuracion/queries";
 
 const METRIC_LABELS: Record<string, string> = {
   skinfold_sum: "Suma 6 Pliegues",
   aks_index: "AKS",
+  fat_percentage: "% de Grasa (Yuhasz)",
   weight_change_pct: "Variación de Peso (%)",
 };
 
@@ -45,15 +46,15 @@ export default async function ConfiguracionPage() {
         <div>
           <h3 className="text-sm font-semibold text-foreground">Umbrales de referencia</h3>
           <p className="text-sm text-muted">
-            Suma 6 Pliegues, AKS y Variación de Peso (día a día, usado en el tab &ldquo;Peso Diario&rdquo; del
-            perfil de jugador), por organización. No editables una vez guardados: una nueva
-            vigencia se agrega como fila nueva, conservando el histórico. Solo admin puede agregar.
+            Suma 6 Pliegues, AKS, % de Grasa (Yuhasz) y Variación de Peso (día a día, usado en el tab
+            &ldquo;Peso Diario&rdquo; del perfil de jugador), por organización. Un solo umbral vigente por
+            métrica: guardar reemplaza el existente. Solo admin puede editarlos.
           </p>
         </div>
 
         {profile.role === "admin" && (
           <div className="rounded-lg border border-border bg-surface p-5">
-            <ThresholdForm action={createThreshold} />
+            <ThresholdForm action={upsertThreshold} />
           </div>
         )}
 

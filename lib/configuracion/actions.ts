@@ -5,11 +5,14 @@ import { requireAdmin, requireProfile } from "@/lib/auth/session";
 import { catalogItemSchema, type CatalogItemValues } from "@/lib/validation/catalog";
 import { thresholdFormSchema, type ThresholdFormValues } from "@/lib/validation/threshold";
 
-// Umbrales de referencia (Suma 6 Pliegues, AKS): configurables por
-// organización, solo admin (política RLS "ALL ... current_user_role() = 'admin'").
-// Nunca se edita/borra un umbral ya guardado: una nueva vigencia es una fila
-// nueva con su propio effective_from, para conservar el histórico completo.
-export async function createThreshold(values: ThresholdFormValues) {
+// Umbrales de referencia (Suma 6 Pliegues, AKS, %Grasa, Variación de Peso):
+// configurables por organización, solo admin (política RLS
+// "ALL ... current_user_role() = 'admin'"). Un solo umbral vigente por
+// métrica (`UNIQUE(organization_id, metric)` en reference_thresholds) --
+// guardar reemplaza el umbral existente de esa métrica en vez de acumular
+// histórico por effective_from; upsert por (organization_id, metric) en vez
+// de insert, para que esto no rompa contra la restricción única.
+export async function upsertThreshold(values: ThresholdFormValues) {
   const parsed = thresholdFormSchema.parse(values);
   const { supabase, profile } = await requireAdmin();
 
@@ -23,14 +26,17 @@ export async function createThreshold(values: ThresholdFormValues) {
     return { error: "El umbral bajo debe ser menor que el umbral alto." };
   }
 
-  const { error } = await supabase.from("reference_thresholds").insert({
-    organization_id: profile.organization_id,
-    metric: parsed.metric,
-    low_cut: lowCut,
-    high_cut: highCut,
-    effective_from: parsed.effective_from,
-    created_by: profile.id,
-  });
+  const { error } = await supabase.from("reference_thresholds").upsert(
+    {
+      organization_id: profile.organization_id,
+      metric: parsed.metric,
+      low_cut: lowCut,
+      high_cut: highCut,
+      effective_from: parsed.effective_from,
+      created_by: profile.id,
+    },
+    { onConflict: "organization_id,metric" }
+  );
 
   if (error) {
     return { error: error.message };

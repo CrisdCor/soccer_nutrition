@@ -38,6 +38,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.redSoft,
     color: COLORS.red,
   },
+  cellHigh: {
+    backgroundColor: COLORS.redSoft,
+    color: COLORS.red,
+  },
+  cellLow: {
+    backgroundColor: COLORS.blueSoft,
+    color: COLORS.blue,
+  },
 });
 
 // Anchos relativos (suman 100) -- Nombre es la columna más ancha.
@@ -54,10 +62,11 @@ const COLUMN_WIDTHS = {
 
 /**
  * Página 2: reporte grupal de todos los jugadores de la categoría con la
- * valoración seleccionada. Colores de celda para Suma 6 Pliegues e Índice
- * AKS según los umbrales configurados (mismo criterio que RangeBadge en el
- * dashboard); % Masa Muscular queda sin color -- no hay umbral definido
- * todavía para esa métrica.
+ * valoración seleccionada. Suma 6 Pliegues usa 3 niveles (azul si
+ * Óptima/bajo, rojo si Alta/alto, sin color si Aceptable/normal) -- Índice
+ * AKS sin cambios, sigue siendo binario (rojo si fuera de rango, mismo
+ * criterio que RangeBadge en el dashboard). % Masa Muscular queda sin color
+ * -- no hay umbral definido todavía para esa métrica.
  */
 export function GroupTablePage({ data }: { data: ReportDocumentData }) {
   return (
@@ -97,7 +106,9 @@ function GroupTableRow({
   const { player, assessment } = row;
   const age = computeDisplayAge(new Date(player.birth_date), new Date(assessment.assessment_date));
 
-  const skinfoldOut = isOutOfRange(assessment.skinfold_sum_6, thresholds.skinfold_sum);
+  const skinfoldClassification = classifyByThreshold(assessment.skinfold_sum_6, thresholds.skinfold_sum);
+  const skinfoldStyle =
+    skinfoldClassification === "alto" ? styles.cellHigh : skinfoldClassification === "bajo" ? styles.cellLow : undefined;
   const aksOut = isOutOfRange(assessment.aks_index, thresholds.aks_index);
 
   return (
@@ -117,7 +128,7 @@ function GroupTableRow({
       <Text
         style={[
           styles.cell,
-          skinfoldOut ? styles.cellOutOfRange : undefined,
+          skinfoldStyle,
           { width: `${COLUMN_WIDTHS.skinfoldSum}%` },
         ]}
       >

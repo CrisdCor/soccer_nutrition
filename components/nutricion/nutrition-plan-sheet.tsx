@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import * as Sheet from "@/components/ui/sheet";
 import { NutritionPlanForm } from "@/components/nutricion/nutrition-plan-form";
 import type { AssessmentDetailFields } from "@/components/valoraciones/assessment-detail-groups";
+import type { DiagnosisThresholds } from "@/lib/configuracion/queries";
 import { buildSuggestedDiagnosis } from "@/lib/nutricion/diagnosis";
 import type { NutritionPlanFull } from "@/lib/nutricion/queries";
-import type { ThresholdRange } from "@/lib/format";
 
 type CatalogOption = { id: string; name: string };
 type MealType = { id: number; name: string; sort_order: number };
@@ -45,7 +45,7 @@ export function NutritionPlanSheet({
   playerBirthDate: string;
   assessment: Assessment;
   existingPlan: NutritionPlanFull | null;
-  thresholds: { skinfold_sum: ThresholdRange | null; aks_index: ThresholdRange | null };
+  thresholds: DiagnosisThresholds;
   dietTypes: CatalogOption[];
   foodGroups: CatalogOption[];
   mealTypes: MealType[];

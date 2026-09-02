@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { RangeBadge } from "@/components/dashboard/range-badge";
 import { ReportFilters } from "@/components/dashboard/report-filters";
+import { ThreeLevelBadge } from "@/components/dashboard/three-level-badge";
 import { TopNControl } from "@/components/dashboard/top-n-control";
 import { MobileCardList } from "@/components/ui/mobile-card-list";
 import { computeDisplayAge } from "@/lib/calculations";
@@ -173,7 +174,12 @@ export function SummaryTableReport({
                   render: (pair) => (
                     <>
                       <span className="data">{formatIndicator(pair.assessment.skinfold_sum_6, 1, " mm")}</span>
-                      <RangeBadge value={pair.assessment.skinfold_sum_6} threshold={thresholds.skinfold_sum} />
+                      <ThreeLevelBadge
+                        value={pair.assessment.skinfold_sum_6}
+                        threshold={thresholds.skinfold_sum}
+                        lowLabel="Óptima"
+                        highLabel="Alta"
+                      />
                     </>
                   ),
                 },
@@ -219,7 +225,12 @@ export function SummaryTableReport({
                     <td className="data px-4 py-3 text-muted">{formatPercentage(pair.assessment.muscle_percentage)}</td>
                     <td className="data px-4 py-3 text-muted">
                       {formatIndicator(pair.assessment.skinfold_sum_6, 1, " mm")}
-                      <RangeBadge value={pair.assessment.skinfold_sum_6} threshold={thresholds.skinfold_sum} />
+                      <ThreeLevelBadge
+                        value={pair.assessment.skinfold_sum_6}
+                        threshold={thresholds.skinfold_sum}
+                        lowLabel="Óptima"
+                        highLabel="Alta"
+                      />
                     </td>
                     <td className="data px-4 py-3 text-muted">
                       {formatIndicator(pair.assessment.aks_index, 2)}

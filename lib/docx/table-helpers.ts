@@ -10,23 +10,24 @@ export const CELL_MARGINS = { top: 40, bottom: 40, left: 80, right: 80 };
  * Celda de una sola línea de texto -- usada por la tabla grupal y por las
  * tablas de mediciones/plan de las páginas individuales. `header` la pinta
  * de azul con texto blanco en negrita (mismo criterio que
- * lib/pdf/group-table-page.tsx); `shaded` la pinta de rojo suave con texto
- * rojo (fuera de umbral, mismo criterio que RangeBadge en pantalla).
+ * lib/pdf/group-table-page.tsx); `tone` la pinta de rojo o azul suave según
+ * corresponda -- "red" para fuera de rango/alto (mismo criterio que
+ * RangeBadge en el dashboard), "blue" para bajo cuando la métrica distingue
+ * dirección (Suma 6 Pliegues: "Óptima" en azul, no solo "no roja").
  */
 export function textCell(
   text: string,
-  options: { widthPct: number; header?: boolean; shaded?: boolean; bold?: boolean } = { widthPct: 0 }
+  options: { widthPct: number; header?: boolean; tone?: "red" | "blue"; bold?: boolean } = { widthPct: 0 }
 ): TableCell {
-  const { widthPct, header = false, shaded = false, bold = false } = options;
+  const { widthPct, header = false, tone, bold = false } = options;
+  const fill = header ? COLORS.blue : tone === "red" ? COLORS.redSoft : tone === "blue" ? COLORS.blueSoft : undefined;
+  const textColor = header ? COLORS.white : tone === "red" ? COLORS.red : tone === "blue" ? COLORS.blue : undefined;
+
   return new TableCell({
     width: { size: widthPct, type: WidthType.PERCENTAGE },
     borders: CELL_BORDERS,
     margins: CELL_MARGINS,
-    shading: header
-      ? { fill: COLORS.blue, type: ShadingType.CLEAR, color: "auto" }
-      : shaded
-        ? { fill: COLORS.redSoft, type: ShadingType.CLEAR, color: "auto" }
-        : undefined,
+    shading: fill ? { fill, type: ShadingType.CLEAR, color: "auto" } : undefined,
     children: [
       new Paragraph({
         children: [
@@ -35,7 +36,7 @@ export function textCell(
             font: FONT,
             bold: header || bold,
             size: header ? 16 : 17,
-            color: header ? COLORS.white : shaded ? COLORS.red : undefined,
+            color: textColor,
           }),
         ],
       }),

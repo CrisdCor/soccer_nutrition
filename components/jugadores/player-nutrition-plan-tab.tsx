@@ -6,7 +6,7 @@ import { NutritionPlanSheet } from "@/components/nutricion/nutrition-plan-sheet"
 import { FilterSelect } from "@/components/ui/filter-select";
 import type { AssessmentDetailFields } from "@/components/valoraciones/assessment-detail-groups";
 import { useUserProfile } from "@/lib/auth/user-profile-context";
-import type { ThresholdRange } from "@/lib/format";
+import type { DiagnosisThresholds } from "@/lib/configuracion/queries";
 import type { NutritionPlanFull } from "@/lib/nutricion/queries";
 
 type Assessment = AssessmentDetailFields & { id: string; assessment_date: string; label: string };
@@ -38,7 +38,7 @@ export function PlayerNutritionPlanTab({
   playerBirthDate: string;
   /** Más reciente primero. */
   assessments: Assessment[];
-  thresholds: { skinfold_sum: ThresholdRange | null; aks_index: ThresholdRange | null };
+  thresholds: DiagnosisThresholds;
   nutritionPlansByAssessment: Record<string, NutritionPlanFull>;
   dietTypes: CatalogOption[];
   foodGroups: CatalogOption[];

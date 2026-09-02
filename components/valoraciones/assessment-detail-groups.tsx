@@ -1,5 +1,5 @@
 import { InfoGroup, InfoItem } from "@/components/ui/info-grid";
-import { formatIndicator, formatPercentage } from "@/lib/format";
+import { classifyByThreshold, formatIndicator, formatPercentage, type ThresholdRange } from "@/lib/format";
 
 export type AssessmentDetailFields = {
   weight_kg: number;
@@ -48,7 +48,20 @@ export type AssessmentDetailFields = {
  * y AssessmentFormSheet (valores por defecto del formulario de edición),
  * para no duplicar el desglose de campos.
  */
-export function AssessmentDetailGroups({ assessment }: { assessment: AssessmentDetailFields }) {
+export function AssessmentDetailGroups({
+  assessment,
+  fatPercentageThreshold = null,
+}: {
+  assessment: AssessmentDetailFields;
+  /** Opcional (default null): sin umbral, "% Masa grasa" queda sin color en
+   *  vez de fallar -- mismo criterio defensivo que el resto de los usos de
+   *  ThresholdRange | null en la app. */
+  fatPercentageThreshold?: ThresholdRange | null;
+}) {
+  const fatClassification = classifyByThreshold(assessment.fat_percentage, fatPercentageThreshold);
+  const fatValueClassName =
+    fatClassification === "bajo" ? "text-brand-blue" : fatClassification === "alto" ? "text-brand-red" : undefined;
+
   return (
     <div className="space-y-8">
       <InfoGroup title="Medidas capturadas">
@@ -88,7 +101,11 @@ export function AssessmentDetailGroups({ assessment }: { assessment: AssessmentD
         <InfoItem label="PR Pierna Corregido" value={formatIndicator(assessment.corrected_calf_girth, 2, " cm")} />
         <InfoItem label="Masa ósea" value={formatIndicator(assessment.bone_mass_kg, 2, " kg")} />
         <InfoItem label="Masa muscular" value={formatIndicator(assessment.muscle_mass_kg, 2, " kg")} />
-        <InfoItem label="% Masa grasa" value={formatPercentage(assessment.fat_percentage)} />
+        <InfoItem
+          label="% Masa grasa"
+          value={formatPercentage(assessment.fat_percentage)}
+          valueClassName={fatValueClassName}
+        />
         <InfoItem label="Masa grasa" value={formatIndicator(assessment.fat_mass_kg, 2, " kg")} />
         <InfoItem label="Masa libre de grasa" value={formatIndicator(assessment.fat_free_mass_kg, 2, " kg")} />
         <InfoItem label="Masa adiposa" value={formatIndicator(assessment.adipose_mass_kg, 2, " kg")} />

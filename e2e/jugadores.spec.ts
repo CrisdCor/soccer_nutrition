@@ -85,13 +85,16 @@ test.describe("Perfil de jugador", () => {
   });
 
   test.describe("Encabezado del perfil", () => {
-    test("subtítulo Categoría · Cantera, y Dato insuficiente sin valoraciones", async ({ page }) => {
+    test("subtítulo Categoría · Cantera, y campos vacíos (—) sin valoraciones", async ({ page }) => {
       // El fixture siempre se crea con categoría + cantera=true.
       await expect(page.getByText(/·\s*Cantera$/)).toBeVisible();
 
-      // Peso, Talla, IMC, % Grasa, IAKS: 5 campos que dependen de la
-      // valoración más reciente. Este jugador no tiene ninguna.
-      await expect(page.getByText("Dato insuficiente")).toHaveCount(5);
+      // Posición, Peso, Talla, IMC, % Grasa, IAKS: 6 campos que muestran "—"
+      // cuando falta el dato -- Posición porque el fixture no asigna una,
+      // los otros 5 porque dependen de la valoración más reciente y este
+      // jugador no tiene ninguna (ver formatIndicator/formatPercentage en
+      // lib/format.ts: null se muestra como "—", no como texto).
+      await expect(page.getByText("—")).toHaveCount(6);
     });
   });
 });

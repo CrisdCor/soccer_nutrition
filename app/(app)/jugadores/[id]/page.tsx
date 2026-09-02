@@ -38,8 +38,8 @@ export default async function PlayerDetailPage({
   const birthYear = new Date(player.birth_date).getFullYear();
 
   // Peso/Talla/IMC/%Grasa/IAKS son de la valoración más reciente, no del
-  // jugador en sí -- si todavía no tiene ninguna, quedan en "Dato insuficiente"
-  // (assessments viene ascendente por fecha; la última es la más reciente).
+  // jugador en sí -- si todavía no tiene ninguna, quedan vacíos (assessments
+  // viene ascendente por fecha; la última es la más reciente).
   const latestAssessment = assessments.at(-1) ?? null;
 
   return (
@@ -48,6 +48,7 @@ export default async function PlayerDetailPage({
         player={player}
         age={age}
         latestAssessment={latestAssessment}
+        fatPercentageThreshold={thresholds.fat_percentage}
         photoSlot={<PlayerPhotoUploader playerId={player.id} photoUrl={photoUrl} birthYear={birthYear} />}
         actionsSlot={
           <>

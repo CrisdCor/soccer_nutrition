@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { formatIndicator, formatPercentage } from "@/lib/format";
+import { classifyByThreshold, formatIndicator, formatPercentage, type ThresholdRange } from "@/lib/format";
 
 type SummaryPlayer = {
   full_name: string;
@@ -31,18 +31,24 @@ export function PlayerStatusSummary({
   player,
   age,
   latestAssessment,
+  fatPercentageThreshold = null,
   photoSlot,
   actionsSlot,
 }: {
   player: SummaryPlayer;
   age: number;
   latestAssessment: SummaryAssessment | null;
+  fatPercentageThreshold?: ThresholdRange | null;
   photoSlot: ReactNode;
   actionsSlot?: ReactNode;
 }) {
   const subtitleParts = [player.category?.name, player.home_club ? "Cantera" : null].filter(
     (part): part is string => Boolean(part)
   );
+
+  const fatClassification = classifyByThreshold(latestAssessment?.fat_percentage ?? null, fatPercentageThreshold);
+  const fatValueClassName =
+    fatClassification === "bajo" ? "text-brand-blue" : fatClassification === "alto" ? "text-brand-red" : undefined;
 
   return (
     <div className="rounded-lg border border-border bg-surface p-6">
@@ -77,7 +83,11 @@ export function PlayerStatusSummary({
 
           <div className="mt-4 grid max-w-xs grid-cols-3 gap-x-8 border-t border-border pt-4">
             <HeaderStat label="IMC" value={formatIndicator(latestAssessment?.bmi ?? null, 2)} />
-            <HeaderStat label="% Grasa" value={formatPercentage(latestAssessment?.fat_percentage ?? null)} />
+            <HeaderStat
+              label="% Grasa"
+              value={formatPercentage(latestAssessment?.fat_percentage ?? null)}
+              valueClassName={fatValueClassName}
+            />
             <HeaderStat label="IAKS" value={formatIndicator(latestAssessment?.aks_index ?? null, 2)} />
           </div>
         </div>
@@ -86,11 +96,19 @@ export function PlayerStatusSummary({
   );
 }
 
-function HeaderStat({ label, value }: { label: string; value: string }) {
+function HeaderStat({
+  label,
+  value,
+  valueClassName = "text-foreground",
+}: {
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
   return (
     <div>
       <p className="text-xs text-muted">{label}</p>
-      <p className="data mt-1 text-sm font-medium text-foreground">{value}</p>
+      <p className={`data mt-1 text-sm font-medium ${valueClassName}`}>{value}</p>
     </div>
   );
 }

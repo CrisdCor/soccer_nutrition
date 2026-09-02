@@ -1,6 +1,12 @@
 import { Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { computeDisplayAge } from "@/lib/calculations";
-import { classifyByThreshold, formatClassification, formatIndicator, formatPercentage } from "@/lib/format";
+import {
+  classifyByThreshold,
+  formatClassification,
+  formatFatPercentageClassification,
+  formatIndicator,
+  formatPercentage,
+} from "@/lib/format";
 import { AksEvolutionChart } from "@/lib/pdf/aks-evolution-chart";
 import { buildMeasurementGroups } from "@/lib/pdf/measurement-groups";
 import { COLORS, sharedStyles } from "@/lib/pdf/styles";
@@ -167,9 +173,11 @@ export function PlayerPage({ row, data }: { row: ReportPlayerData; data: ReportD
   const age = computeDisplayAge(new Date(player.birth_date), new Date(assessment.assessment_date));
   const groups = buildMeasurementGroups(assessment);
 
-  const fatClassification = formatClassification(
-    classifyByThreshold(assessment.skinfold_sum_6, data.thresholds.skinfold_sum)
-  );
+  // %Grasa: umbral propio (`fat_percentage`), 3 niveles con color (azul/rojo)
+  // -- ya no reusa el umbral de Suma 6 Pliegues. AKS: sin cambios.
+  const fatRawClassification = classifyByThreshold(assessment.fat_percentage, data.thresholds.fat_percentage);
+  const fatClassification = formatFatPercentageClassification(fatRawClassification);
+  const fatColor = fatRawClassification === "bajo" ? COLORS.blue : fatRawClassification === "alto" ? COLORS.red : undefined;
   const aksClassification = formatClassification(
     classifyByThreshold(assessment.aks_index, data.thresholds.aks_index)
   );
@@ -202,6 +210,7 @@ export function PlayerPage({ row, data }: { row: ReportPlayerData; data: ReportD
             <Stat
               label="% Grasa (Yuhasz)"
               value={`${formatPercentage(assessment.fat_percentage)} · ${fatClassification}`}
+              color={fatColor}
             />
             <Stat label="IAKS" value={`${formatIndicator(assessment.aks_index, 2)} · ${aksClassification}`} />
           </View>
@@ -237,22 +246,23 @@ export function PlayerPage({ row, data }: { row: ReportPlayerData; data: ReportD
         <Text style={styles.paragraph}>{plan?.nutritional_diagnosis || "Sin diagnóstico registrado."}</Text>
       </View>
 
-      {plan ? (
-        <PlanSections plan={plan} catalogs={data.catalogs} />
-      ) : (
-        <View style={styles.noPlanBox}>
-          <Text style={styles.noPlanText}>Plan de alimentación no registrado</Text>
-        </View>
-      )}
+      {data.includePlan &&
+        (plan ? (
+          <PlanSections plan={plan} catalogs={data.catalogs} />
+        ) : (
+          <View style={styles.noPlanBox}>
+            <Text style={styles.noPlanText}>Plan de alimentación no registrado</Text>
+          </View>
+        ))}
     </Page>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <View style={styles.statItem}>
       <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={[styles.statValue, color ? { color } : undefined]}>{value}</Text>
     </View>
   );
 }
@@ -301,7 +311,7 @@ function PlanSections({
         <Text style={sharedStyles.h2}>Requerimiento energético</Text>
         <View style={styles.statsRow}>
           <Stat label="Requerimiento" value={formatIndicator(plan.energy_requirement_kcal, 0, " kcal/día")} />
-          <Stat label="Ajuste calórico" value={adjustmentLabel ?? "Dato insuficiente"} />
+          <Stat label="Ajuste calórico" value={adjustmentLabel ?? "—"} />
         </View>
       </View>
 

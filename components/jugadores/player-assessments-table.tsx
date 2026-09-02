@@ -5,9 +5,10 @@ import { MobileCardList } from "@/components/ui/mobile-card-list";
 import { AssessmentDetailSheet } from "@/components/valoraciones/assessment-detail-sheet";
 import { AssessmentRowActions } from "@/components/valoraciones/assessment-row-actions";
 import type { AssessmentDetailFields } from "@/components/valoraciones/assessment-detail-groups";
+import type { DiagnosisThresholds } from "@/lib/configuracion/queries";
 import { formatIndicator, formatPercentage } from "@/lib/format";
-import type { NutritionPlanFull } from "@/lib/nutricion/queries";
 import type { ThresholdRange } from "@/lib/format";
+import type { NutritionPlanFull } from "@/lib/nutricion/queries";
 
 type Assessment = AssessmentDetailFields & { id: string; assessment_date: string; label: string };
 type CatalogOption = { id: string; name: string };
@@ -28,7 +29,7 @@ export function PlayerAssessmentsTable({
   playerSex: "Hombre" | "Mujer";
   playerBirthDate: string;
   assessments: Assessment[];
-  thresholds: { skinfold_sum: ThresholdRange | null; aks_index: ThresholdRange | null };
+  thresholds: DiagnosisThresholds;
   nutritionPlansByAssessment: Record<string, NutritionPlanFull>;
   dietTypes: CatalogOption[];
   foodGroups: CatalogOption[];
@@ -50,7 +51,9 @@ export function PlayerAssessmentsTable({
       <MobileCardList
         rows={rows}
         keyFor={(assessment) => assessment.id}
-        title={(assessment) => <AssessmentDateCell assessment={assessment} />}
+        title={(assessment) => (
+          <AssessmentDateCell assessment={assessment} fatPercentageThreshold={thresholds.fat_percentage} />
+        )}
         fields={[
           { label: "Etiqueta", render: (assessment) => assessment.label },
           {
@@ -97,7 +100,7 @@ export function PlayerAssessmentsTable({
             {rows.map((assessment) => (
               <tr key={assessment.id} className="border-b border-border last:border-0">
                 <td className="px-4 py-3">
-                  <AssessmentDateCell assessment={assessment} />
+                  <AssessmentDateCell assessment={assessment} fatPercentageThreshold={thresholds.fat_percentage} />
                 </td>
                 <td className="px-4 py-3 text-muted">{assessment.label}</td>
                 <td className="data px-4 py-3 text-muted">{formatIndicator(assessment.weight_kg, 1, " kg")}</td>
@@ -130,7 +133,13 @@ export function PlayerAssessmentsTable({
  * menú "•••" -- ambos disparadores para la misma acción, con su propio
  * estado open/onOpenChange (no comparten uno con el menú de la fila).
  */
-function AssessmentDateCell({ assessment }: { assessment: Assessment }) {
+function AssessmentDateCell({
+  assessment,
+  fatPercentageThreshold,
+}: {
+  assessment: Assessment;
+  fatPercentageThreshold: ThresholdRange | null;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -142,7 +151,12 @@ function AssessmentDateCell({ assessment }: { assessment: Assessment }) {
       >
         {assessment.assessment_date}
       </button>
-      <AssessmentDetailSheet assessment={assessment} open={open} onOpenChange={setOpen} />
+      <AssessmentDetailSheet
+        assessment={assessment}
+        fatPercentageThreshold={fatPercentageThreshold}
+        open={open}
+        onOpenChange={setOpen}
+      />
     </>
   );
 }

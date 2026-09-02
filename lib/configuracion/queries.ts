@@ -14,9 +14,19 @@ export async function listThresholds() {
 }
 
 export type CurrentThresholds = Record<
-  "skinfold_sum" | "aks_index" | "weight_change_pct",
+  "skinfold_sum" | "aks_index" | "weight_change_pct" | "fat_percentage",
   ThresholdRange | null
 >;
+
+/**
+ * Subconjunto de CurrentThresholds que necesita el diagnóstico sugerido de
+ * un plan nutricional (lib/nutricion/diagnosis.ts) -- las pantallas/paneles
+ * que terminan pasándole esto a buildSuggestedDiagnosis() (NutritionPlanSheet
+ * y toda la cadena que la alimenta: PlayerAssessmentsTabs, AssessmentRowActions,
+ * PlayerNutritionPlanTab, PlayerAssessmentsTable) usan este tipo en vez de
+ * repetir el literal cada vez.
+ */
+export type DiagnosisThresholds = Pick<CurrentThresholds, "skinfold_sum" | "aks_index" | "fat_percentage">;
 
 /** El umbral vigente por métrica: el más reciente con effective_from <= hoy. */
 export async function getCurrentThresholds(): Promise<CurrentThresholds> {
@@ -31,7 +41,12 @@ export async function getCurrentThresholds(): Promise<CurrentThresholds> {
 
   if (error) throw error;
 
-  const result: CurrentThresholds = { skinfold_sum: null, aks_index: null, weight_change_pct: null };
+  const result: CurrentThresholds = {
+    skinfold_sum: null,
+    aks_index: null,
+    weight_change_pct: null,
+    fat_percentage: null,
+  };
   for (const row of data ?? []) {
     if (result[row.metric] === null) {
       result[row.metric] = { low_cut: row.low_cut, high_cut: row.high_cut };

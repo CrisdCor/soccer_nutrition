@@ -67,7 +67,7 @@ export function NutritionPlanReport({
       <ReportSection title="Requerimiento energético">
         <div className="grid gap-4 sm:grid-cols-2">
           <Stat label="Requerimiento" value={formatIndicator(plan.energy_requirement_kcal, 0, " kcal/día")} />
-          <Stat label="Ajuste calórico" value={adjustmentLabel ?? "Dato insuficiente"} />
+          <Stat label="Ajuste calórico" value={adjustmentLabel ?? "—"} />
         </div>
       </ReportSection>
 

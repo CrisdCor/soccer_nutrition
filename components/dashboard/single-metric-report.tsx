@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { RangeBadge } from "@/components/dashboard/range-badge";
 import { ReportBarChart } from "@/components/dashboard/report-bar-chart";
 import { ReportFilters } from "@/components/dashboard/report-filters";
+import { ThreeLevelBadge } from "@/components/dashboard/three-level-badge";
 import { TopNControl } from "@/components/dashboard/top-n-control";
 import { MobileCardList } from "@/components/ui/mobile-card-list";
 import {
@@ -40,6 +41,7 @@ export function SingleMetricReport({
   metricLabel,
   unit,
   decimals,
+  threeLevelLabels,
 }: {
   players: ReportPlayer[];
   assessmentsByPlayer: Map<string, ReportAssessment[]>;
@@ -51,6 +53,9 @@ export function SingleMetricReport({
   metricLabel: string;
   unit: string;
   decimals: number;
+  /** Suma 6 Pliegues: bajo/alto se distinguen (azul/rojo), ver
+   *  ThreeLevelBadge. Sin esto (AKS): RangeBadge de siempre, sin cambios. */
+  threeLevelLabels?: { low: string; high: string };
 }) {
   const [categoryId, setCategoryId] = useState(ALL);
   const [positionId, setPositionId] = useState(ALL);
@@ -139,7 +144,16 @@ export function SingleMetricReport({
                   render: (pair) => (
                     <>
                       <span className="data">{formatIndicator(pair.assessment[metricKey], decimals, unit)}</span>
-                      <RangeBadge value={pair.assessment[metricKey]} threshold={threshold} />
+                      {threeLevelLabels ? (
+                        <ThreeLevelBadge
+                          value={pair.assessment[metricKey]}
+                          threshold={threshold}
+                          lowLabel={threeLevelLabels.low}
+                          highLabel={threeLevelLabels.high}
+                        />
+                      ) : (
+                        <RangeBadge value={pair.assessment[metricKey]} threshold={threshold} />
+                      )}
                     </>
                   ),
                 },
@@ -159,7 +173,16 @@ export function SingleMetricReport({
                     <td className="px-4 py-3 font-medium text-foreground">{pair.player.full_name}</td>
                     <td className="data px-4 py-3 text-muted">
                       {formatIndicator(pair.assessment[metricKey], decimals, unit)}
-                      <RangeBadge value={pair.assessment[metricKey]} threshold={threshold} />
+                      {threeLevelLabels ? (
+                        <ThreeLevelBadge
+                          value={pair.assessment[metricKey]}
+                          threshold={threshold}
+                          lowLabel={threeLevelLabels.low}
+                          highLabel={threeLevelLabels.high}
+                        />
+                      ) : (
+                        <RangeBadge value={pair.assessment[metricKey]} threshold={threshold} />
+                      )}
                     </td>
                   </tr>
                 ))}

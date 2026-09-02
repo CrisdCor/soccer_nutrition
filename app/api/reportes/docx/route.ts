@@ -34,6 +34,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const mode = searchParams.get("mode") === "individual" ? "individual" : "grupal";
   const valoracionLabel = searchParams.get("valoracion");
+  // Checkbox "Incluir plan de alimentación" de /reportes -- marcado por
+  // defecto (también para no romper links viejos sin este parámetro).
+  const includePlan = searchParams.get("includePlan") !== "false";
 
   if (!valoracionLabel) {
     return new Response("Falta el parámetro valoracion.", { status: 400 });
@@ -59,6 +62,7 @@ export async function GET(request: NextRequest) {
     shieldDataUri,
     thresholds,
     catalogs: { dietTypes, foodGroups, mealTypes },
+    includePlan,
   };
 
   if (mode === "individual") {

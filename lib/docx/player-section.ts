@@ -1,6 +1,12 @@
 import { ImageRun, Paragraph, Table, TableRow, TextRun, WidthType } from "docx";
 import { computeDisplayAge } from "@/lib/calculations";
-import { classifyByThreshold, formatClassification, formatIndicator, formatPercentage } from "@/lib/format";
+import {
+  classifyByThreshold,
+  formatClassification,
+  formatFatPercentageClassification,
+  formatIndicator,
+  formatPercentage,
+} from "@/lib/format";
 import { buildAksChartPng } from "@/lib/docx/aks-chart-image";
 import { COLORS, FONT } from "@/lib/docx/styles";
 import { textCell } from "@/lib/docx/table-helpers";
@@ -25,9 +31,11 @@ export async function buildPlayerSectionChildren(
   const age = computeDisplayAge(new Date(player.birth_date), new Date(assessment.assessment_date));
   const groups = buildMeasurementGroups(assessment);
 
-  const fatClassification = formatClassification(
-    classifyByThreshold(assessment.skinfold_sum_6, data.thresholds.skinfold_sum)
-  );
+  // %Grasa: umbral propio (`fat_percentage`), 3 niveles con color -- ya no
+  // reusa el umbral de Suma 6 Pliegues. AKS: sin cambios.
+  const fatRawClassification = classifyByThreshold(assessment.fat_percentage, data.thresholds.fat_percentage);
+  const fatClassification = formatFatPercentageClassification(fatRawClassification);
+  const fatColor = fatRawClassification === "bajo" ? COLORS.blue : fatRawClassification === "alto" ? COLORS.red : undefined;
   const aksClassification = formatClassification(classifyByThreshold(assessment.aks_index, data.thresholds.aks_index));
 
   const children: (Paragraph | Table)[] = [
@@ -48,13 +56,17 @@ export async function buildPlayerSectionChildren(
       ],
     }),
     statsParagraph([
-      ["Posición", player.position?.name ?? "—"],
-      ["Edad", String(age)],
-      ["Peso", formatIndicator(assessment.weight_kg, 1, " kg")],
-      ["Talla", formatIndicator(assessment.height_cm, 1, " cm")],
-      ["IMC", formatIndicator(assessment.bmi, 2)],
-      ["% Grasa (Yuhasz)", `${formatPercentage(assessment.fat_percentage)} · ${fatClassification}`],
-      ["IAKS", `${formatIndicator(assessment.aks_index, 2)} · ${aksClassification}`],
+      { label: "Posición", value: player.position?.name ?? "—" },
+      { label: "Edad", value: String(age) },
+      { label: "Peso", value: formatIndicator(assessment.weight_kg, 1, " kg") },
+      { label: "Talla", value: formatIndicator(assessment.height_cm, 1, " cm") },
+      { label: "IMC", value: formatIndicator(assessment.bmi, 2) },
+      {
+        label: "% Grasa (Yuhasz)",
+        value: `${formatPercentage(assessment.fat_percentage)} · ${fatClassification}`,
+        color: fatColor,
+      },
+      { label: "IAKS", value: `${formatIndicator(assessment.aks_index, 2)} · ${aksClassification}` },
     ]),
   ];
 
@@ -84,10 +96,12 @@ export async function buildPlayerSectionChildren(
 
   children.push(heading("Diagnóstico nutricional"), bodyParagraph(plan?.nutritional_diagnosis || "Sin diagnóstico registrado."));
 
-  if (plan) {
-    children.push(...buildPlanSections(plan, data.catalogs));
-  } else {
-    children.push(mutedParagraph("Plan de alimentación no registrado"));
+  if (data.includePlan) {
+    if (plan) {
+      children.push(...buildPlanSections(plan, data.catalogs));
+    } else {
+      children.push(mutedParagraph("Plan de alimentación no registrado"));
+    }
   }
 
   return children;
@@ -106,8 +120,8 @@ function buildPlanSections(plan: NutritionPlanFull, catalogs: ReportCatalogs): (
   children.push(
     heading("Requerimiento energético"),
     statsParagraph([
-      ["Requerimiento", formatIndicator(plan.energy_requirement_kcal, 0, " kcal/día")],
-      ["Ajuste calórico", adjustmentLabel ?? "Dato insuficiente"],
+      { label: "Requerimiento", value: formatIndicator(plan.energy_requirement_kcal, 0, " kcal/día") },
+      { label: "Ajuste calórico", value: adjustmentLabel ?? "—" },
     ]),
     heading("Distribución de energía y macronutrientes"),
     buildMacrosTable(plan),
@@ -245,12 +259,14 @@ function spacer(): Paragraph {
   return new Paragraph({ spacing: { after: 160 }, children: [] });
 }
 
-function statsParagraph(pairs: [string, string][]): Paragraph {
+type StatEntry = { label: string; value: string; color?: string };
+
+function statsParagraph(entries: StatEntry[]): Paragraph {
   const runs: TextRun[] = [];
-  pairs.forEach(([label, value], index) => {
+  entries.forEach(({ label, value, color }, index) => {
     if (index > 0) runs.push(new TextRun({ text: "    ", font: FONT, size: 17 }));
     runs.push(new TextRun({ text: `${label}: `, font: FONT, bold: true, size: 17 }));
-    runs.push(new TextRun({ text: value, font: FONT, size: 17 }));
+    runs.push(new TextRun({ text: value, font: FONT, size: 17, color }));
   });
   return new Paragraph({ spacing: { after: 200 }, children: runs });
 }

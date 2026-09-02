@@ -69,6 +69,7 @@ export function DashboardReports({
             metricLabel="Suma 6 Pliegues"
             unit=" mm"
             decimals={1}
+            threeLevelLabels={{ low: "Óptima", high: "Alta" }}
           />
         </Segmented.Content>
 

@@ -44,6 +44,7 @@ export function ThresholdForm({
         <select className="select" {...register("metric")}>
           <option value="skinfold_sum">Suma 6 Pliegues</option>
           <option value="aks_index">AKS</option>
+          <option value="fat_percentage">% de Grasa (Yuhasz)</option>
           <option value="weight_change_pct">Variación de Peso (%)</option>
         </select>
       </Field>
@@ -68,7 +69,7 @@ export function ThresholdForm({
 
       <div className="sm:col-span-4">
         <button type="submit" disabled={isSubmitting} className="btn-primary">
-          {isSubmitting ? "Guardando…" : "Agregar umbral"}
+          {isSubmitting ? "Guardando…" : "Guardar umbral"}
         </button>
       </div>
     </form>

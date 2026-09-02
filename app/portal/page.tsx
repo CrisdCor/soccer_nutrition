@@ -4,7 +4,7 @@ import { PlayerStatusSummary } from "@/components/jugadores/player-status-summar
 import { NutritionPlanReport } from "@/components/nutricion/nutrition-plan-report";
 import * as Tabs from "@/components/ui/tabs";
 import { computeDisplayAge } from "@/lib/calculations";
-import { listDietTypes, listFoodGroups } from "@/lib/configuracion/queries";
+import { getCurrentThresholds, listDietTypes, listFoodGroups } from "@/lib/configuracion/queries";
 import { getPlayerById, getPlayerPhotoUrl } from "@/lib/jugadores/queries";
 import { getNutritionPlansByPlayer, listMealTypes } from "@/lib/nutricion/queries";
 import { requirePlayerProfile } from "@/lib/portal/session";
@@ -28,14 +28,16 @@ export default async function PortalPage() {
     notFound();
   }
 
-  const [player, assessments, dietTypes, foodGroups, mealTypes, nutritionPlansByAssessment] = await Promise.all([
-    getPlayerById(playerId),
-    listAssessmentsByPlayer(playerId),
-    listDietTypes({ activeOnly: true }),
-    listFoodGroups({ activeOnly: true }),
-    listMealTypes(),
-    getNutritionPlansByPlayer(playerId),
-  ]);
+  const [player, assessments, thresholds, dietTypes, foodGroups, mealTypes, nutritionPlansByAssessment] =
+    await Promise.all([
+      getPlayerById(playerId),
+      listAssessmentsByPlayer(playerId),
+      getCurrentThresholds(),
+      listDietTypes({ activeOnly: true }),
+      listFoodGroups({ activeOnly: true }),
+      listMealTypes(),
+      getNutritionPlansByPlayer(playerId),
+    ]);
 
   if (!player) {
     notFound();
@@ -64,6 +66,7 @@ export default async function PortalPage() {
           player={player}
           age={age}
           latestAssessment={latestAssessment}
+          fatPercentageThreshold={thresholds.fat_percentage}
           photoSlot={<PlayerPhotoUploader playerId={player.id} photoUrl={photoUrl} birthYear={birthYear} />}
         />
       </Tabs.Content>

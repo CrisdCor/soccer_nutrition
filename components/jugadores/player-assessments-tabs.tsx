@@ -9,6 +9,7 @@ import { AssessmentFormSheet } from "@/components/valoraciones/assessment-form-s
 import { NutritionPlanSheet } from "@/components/nutricion/nutrition-plan-sheet";
 import type { AssessmentDetailFields } from "@/components/valoraciones/assessment-detail-groups";
 import { useUserProfile } from "@/lib/auth/user-profile-context";
+import type { DiagnosisThresholds } from "@/lib/configuracion/queries";
 import type { ThresholdRange } from "@/lib/format";
 import type { NutritionPlanFull } from "@/lib/nutricion/queries";
 import type { WeighInRecord } from "@/lib/pesajes/queries";
@@ -48,7 +49,7 @@ export function PlayerAssessmentsTabs({
   playerBirthDate: string;
   /** Ascendente por fecha. */
   assessments: Assessment[];
-  thresholds: { skinfold_sum: ThresholdRange | null; aks_index: ThresholdRange | null };
+  thresholds: DiagnosisThresholds;
   nutritionPlansByAssessment: Record<string, NutritionPlanFull>;
   dietTypes: CatalogOption[];
   foodGroups: CatalogOption[];

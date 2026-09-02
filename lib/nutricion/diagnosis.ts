@@ -1,5 +1,6 @@
 import { computeDisplayAge } from "@/lib/calculations";
-import { classifyByThreshold, formatClassification, type ThresholdRange } from "@/lib/format";
+import type { DiagnosisThresholds } from "@/lib/configuracion/queries";
+import { classifyByThreshold, formatClassification, formatFatPercentageClassification } from "@/lib/format";
 
 /**
  * Párrafo inicial sugerido al crear un plan (solo punto de partida: la
@@ -17,21 +18,23 @@ export function buildSuggestedDiagnosis(input: {
   aksIndex: number | null;
   skinfoldSum6: number | null;
   fatPercentage: number | null;
-  thresholds: { skinfold_sum: ThresholdRange | null; aks_index: ThresholdRange | null };
+  thresholds: DiagnosisThresholds;
 }): string {
   const age = computeDisplayAge(input.birthDate, input.assessmentDate);
 
+  // AKS: sin cambios, mismo criterio/etiquetas de siempre. %Grasa: umbral
+  // propio (`fat_percentage`) contra el propio porcentaje -- ya no reusa el
+  // umbral de Suma 6 Pliegues (ver lib/format.ts).
   const aksClassification = formatClassification(
     classifyByThreshold(input.aksIndex, input.thresholds.aks_index)
   ).toLowerCase();
-  const fatClassification = formatClassification(
-    classifyByThreshold(input.skinfoldSum6, input.thresholds.skinfold_sum)
+  const fatClassification = formatFatPercentageClassification(
+    classifyByThreshold(input.fatPercentage, input.thresholds.fat_percentage)
   ).toLowerCase();
 
-  const bmiText = input.bmi != null ? input.bmi.toFixed(2) : "dato insuficiente";
-  const aksText = input.aksIndex != null ? input.aksIndex.toFixed(2) : "dato insuficiente";
-  const fatText =
-    input.fatPercentage != null ? `${(input.fatPercentage * 100).toFixed(1)}%` : "dato insuficiente";
+  const bmiText = input.bmi != null ? input.bmi.toFixed(2) : "—";
+  const aksText = input.aksIndex != null ? input.aksIndex.toFixed(2) : "—";
+  const fatText = input.fatPercentage != null ? `${(input.fatPercentage * 100).toFixed(1)}%` : "—";
 
   return (
     `${input.sex} de ${age} años al cual se realiza valoración nutricional presentando un peso de ` +

@@ -2,6 +2,7 @@
 
 import * as Sheet from "@/components/ui/sheet";
 import { AssessmentDetailGroups, type AssessmentDetailFields } from "@/components/valoraciones/assessment-detail-groups";
+import type { ThresholdRange } from "@/lib/format";
 
 type Assessment = AssessmentDetailFields & { id: string; assessment_date: string; label: string };
 
@@ -12,10 +13,12 @@ type Assessment = AssessmentDetailFields & { id: string; assessment_date: string
  */
 export function AssessmentDetailSheet({
   assessment,
+  fatPercentageThreshold,
   open,
   onOpenChange,
 }: {
   assessment: Assessment;
+  fatPercentageThreshold: ThresholdRange | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -27,7 +30,7 @@ export function AssessmentDetailSheet({
           <Sheet.Description>{assessment.assessment_date}</Sheet.Description>
         </Sheet.Header>
         <Sheet.Body>
-          <AssessmentDetailGroups assessment={assessment} />
+          <AssessmentDetailGroups assessment={assessment} fatPercentageThreshold={fatPercentageThreshold} />
         </Sheet.Body>
       </Sheet.Content>
     </Sheet.Root>

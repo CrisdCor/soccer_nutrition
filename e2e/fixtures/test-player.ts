@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 
 /**
- * Jugador fijo, sin valoraciones, para el caso "Dato insuficiente" del
+ * Jugador fijo, sin valoraciones, para el caso de campos vacíos ("—") del
  * encabezado. Se crea vía el mismo formulario "Nuevo jugador" que usaría la
  * nutricionista real (no se escribe directo a la base) y queda con
  * categoría + cantera=true para también cubrir la aserción de subtítulo

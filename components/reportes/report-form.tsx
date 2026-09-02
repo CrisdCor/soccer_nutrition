@@ -30,6 +30,7 @@ export function ReportForm({
   const [mode, setMode] = useState<ReportMode>("grupal");
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [playerId, setPlayerId] = useState("");
+  const [includePlan, setIncludePlan] = useState(true);
 
   // Grupal: valoraciones disponibles en toda la categoría (sin filtrar por
   // categoría acá -- buildValoracionOptions ya viene de `assessments`
@@ -76,8 +77,8 @@ export function ReportForm({
         ? `mode=individual&player=${encodeURIComponent(effectivePlayerId)}&valoracion=${encodeURIComponent(effectivePlayerValoracionLabel)}`
         : undefined;
 
-  const downloadHrefPdf = reportQuery ? `/api/reportes/pdf?${reportQuery}` : undefined;
-  const downloadHrefDocx = reportQuery ? `/api/reportes/docx?${reportQuery}` : undefined;
+  const downloadHrefPdf = reportQuery ? `/api/reportes/pdf?${reportQuery}&includePlan=${includePlan}` : undefined;
+  const downloadHrefDocx = reportQuery ? `/api/reportes/docx?${reportQuery}&includePlan=${includePlan}` : undefined;
 
   const hasOptions = categories.length > 0;
 
@@ -170,6 +171,16 @@ export function ReportForm({
           </div>
         </>
       )}
+
+      <label className="flex items-center gap-2 text-sm text-foreground">
+        <input
+          type="checkbox"
+          className="h-4 w-4"
+          checked={includePlan}
+          onChange={(event) => setIncludePlan(event.target.checked)}
+        />
+        Incluir plan de alimentación
+      </label>
 
       <div className="flex gap-2">
         {downloadHrefPdf ? (

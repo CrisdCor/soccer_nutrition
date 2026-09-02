@@ -9,11 +9,20 @@ export function InfoGroup({ title, children }: { title: string; children: ReactN
   );
 }
 
-export function InfoItem({ label, value }: { label: string; value: string }) {
+export function InfoItem({
+  label,
+  value,
+  valueClassName = "text-foreground",
+}: {
+  label: string;
+  value: string;
+  /** Override puntual del color del valor (ej. clasificación de %Grasa) -- por defecto el texto neutro de siempre. */
+  valueClassName?: string;
+}) {
   return (
     <div className="rounded-lg border border-border bg-surface p-3">
       <p className="text-xs text-muted">{label}</p>
-      <p className="data mt-1 text-sm font-medium text-foreground">{value}</p>
+      <p className={`data mt-1 text-sm font-medium ${valueClassName}`}>{value}</p>
     </div>
   );
 }
